@@ -1,0 +1,966 @@
+\begin{aosachapter}{SnowFlock}{s:snowflock}{Roy Bryant y Andr\'e{s} Lagar-Cavilla}
+
+Cloud computing provee una atractiva y asequible plataforma de computadoras.
+En vez de comprar y configurar un servidor físico, con todo lo que 
+conlleva en tiempo, esfuerzo y costos por adelantado, los usuarios 
+pueden alquilar ``servidores'' en la nube con algunos clics por 
+menos de diez centavos la hora. Los proveedores de Cloud mantienen 
+costos bajos al proveer máquinas virtuales (VMs) en vez de computadoras 
+físicas. El factor clave es el software de virtualización, llamado 
+monitor de máquina virtual (VMM), que emula a la máquina física. Los 
+usuarios se encuentran aislados en sus VMs para invitados, y son felizmente
+inconscientes de que suelen compartir la máquina física (``host'') con muchos otros usuarios.  
+
+%Cloud computing provides an attractively affordable computing
+%platform.  Instead of buying and configuring a physical server, with
+%all the associated time, effort and up front costs, users can rent 
+%``servers'' in the cloud with a few mouse clicks for
+%less than 10 cents per hour. Cloud providers keep their costs low by
+%providing virtual machines (VMs) instead of physical computers. The
+%key enabler is the virtualization software, called a virtual machine
+%monitor (VMM), that emulates a physical machine. Users are safely
+%isolated in their ``guest'' VMs, and are blissfully unaware that they
+%typically share the physical machine (``host'') with many others.
+
+\begin{aosasect1}{Introducción a SnowFlock}
+%\begin{aosasect1}{Introducing SnowFlock}
+
+Las Clouds son una bendición para las organizaciones ágiles. Con 
+servidores físicos, los usuarios están relegados a esperar 
+impacientemente mientras otros (lentamente) aprueban la compra del 
+servidor, realizan la el pedido, envían el servidor, instalan y, 
+configuran el sistema operativo (OS) y las pilas de aplicación. En vez
+de esperar semanas para que los otros realicen la entrega, el usuario de
+cloud mantiene el control del proceso y puede crear un nuevo e independiente
+servidor en cuestión de minutos.
+
+%Clouds are a boon to agile organizations. With physical servers, users
+%are relegated to waiting impatiently while others (slowly) approve the
+%server purchase, place the order, ship the server, and install and
+%configure the Operating System (OS) and application stacks. Instead of
+%waiting weeks for others to deliver, the cloud user retains control of
+%the process and can create a new, standalone server in minutes.
+
+
+Desafortunadamente, pocos servidores clouds se mantienen de manera 
+independiente. Impulsada por la rápida creación de instancias y por el 
+modelo de pago por uso, los servidores cloud son miembros típicos de un
+conjunto variable de servidores configurados de manera similar que 
+realizan tareas dinámicas y escalables relacionadas con la computación 
+paralela, minería de datos, o sirviendo a páginas webs. Puesto que las 
+clouds repetidamente arrancan nuevas instancias desde las mismas plantillas
+estáticas, las clouds comerciales no logran cumplir plenamente la promesa
+de una verdadera computación bajo demanda. Después de la instancia del 
+servidor, los usuarios de clouds deben, todavía, manejar la pertenencia 
+al grupo y manejar/realizar el corretaje/ la incorporación de nuevos servidores.
+ 
+
+%Unfortunately, few cloud servers stand alone.  Driven by the quick
+%instantiation and pay-per-use model, cloud servers are typically
+%members of a variable pool of similarly configured servers performing
+%dynamic and scalable tasks related to parallel computing, data mining,
+%or serving web pages.  Because they repeatedly boot new instances from
+%the same, static template, commercial clouds fail to fully deliver on
+%the promise of true on-demand computation. After instantiating the
+%server, the cloud user must still manage cluster membership and broker
+%the addition of new servers.
+
+
+Snowflock aborda estas cuestiones con clonación VM, nuestra propuesta cloud
+API call. De la misma manera que el código de aplicación invoca 
+rutinariamente los servicios de OS a través de una interfase de llamadas
+al sistema, ahora también puede invocar los servicios de cloud con una 
+interfase similar. Con la clonación VM de Snowflock, la asignación de recursos,
+el manejo de cluster y la lógica de aplicación pueden combinarse 
+programáticamente y ser tratados como una operación lógica simple.
+
+ 
+%SnowFlock addresses these issues with VM Cloning, our proposed cloud
+%API call. In the same way that application code routinely invokes OS
+%services through a syscall interface, it could now also invoke cloud
+%services through a similar interface. With SnowFlock's VM Cloning,
+%resource allocation, cluster management, and application logic can be
+%interwoven programmatically and dealt with as a single logical
+%operation.
+
+La llamada de la clonación VM crea instancias con múltiples servidores
+cloud que son copias idénticas a los VM progenitores hasta el punto de
+la clonación. Lógicamente, los clones heredan todo el estado de sus padres, 
+incluyendo los caché del nivel de OS y del nivel de aplicación. Además, 
+los clones son automáticamente añadidos a una red interna privada, lo 
+que efectivamente los une a un grupo dinámicamente escalable. Los nuevos 
+recursos de computación encapsulados como VMs idénticos pueden ser creados 
+sobre la marcha y pueden ser aprovechados según se precise.
+
+%The VM Cloning call instantiates multiple cloud servers that are
+%identical copies of the originating parent VM up to the point of
+%cloning. Logically, clones inherit all the state of their parent,
+%including OS- and application-level caches. Further, clones are
+%automatically added to an internal private network, thus effectively
+%joining a dynamically scalable cluster. New computation resources,
+%encapsulated as identical VMs, can be created on-the-fly and can be
+%dynamically leveraged as needed.
+
+
+Para ser de uso práctico, la clonación VM debe ser aplicable, eficiente
+y rápida. En este capítulo, describiremos como la implementación de la
+clonación VM por parte de Snowflock puede ser efectivamente combinada 
+en varios diferentes modelos de programación y marcos, como puede ser
+implementado para mantener el tiempo de ejecución de la aplicación y 
+sostener los gastos generales en el mínimo, y como puede ser usado para
+crear docenas de nuevos VMs en cinco segundos o menos. 
+ 
+%To be of practical use, VM cloning has to be applicable, efficient,
+%and fast. In this chapter we will describe how SnowFlock's
+%implementation of VM Cloning can be effectively interwoven in several
+%different programming models and frameworks, how it can be implemented
+%to keep application runtime and provider overhead to a minimum, and
+%how it can be used to create dozens of new VMs in five seconds or
+%less.
+
+Con una API para el control de programación de la clonación VM con enlaces 
+en C, C++, Python y Java, SnowFlock es extremadamente flexible y versátil.
+Hemos usado satisfactoriamente Snowflock en prototipos de implementaciones
+en varios, y diferentes sistemas. En escenarios de computación paralelos, 
+hemos logrado excelentes resultados al clonar explícitamente VM de trabajo
+que cooperativamente distribuyen la carga entre varios hosts físicos. Para 
+aplicaciones paralelas que usan la Message Passing Interface (MPI) y que 
+normalmente se ejecutan en clúster de servidores dedicados, modificamos el 
+gestor de arranque del MPI para proveer aplicaciones sin modificar con buena
+performance/rendimiento y menores gastos generales al proporcionar un clúster 
+fresco de clones bajo demanda para cada ejecución. Por último, en un caso 
+particularmente diferente, hemos usado SnowFlock para mejorar la eficiencia y la
+performance de servidores elásticos. Los actuales servidores elásticos basados 
+en cloud dan arranque a nuevos y fríos trabajadores, según las necesidades en 
+los picos de demanda. En vez de esto, al clonar una VM ya funcionando, SnowFlock
+trae nuevos trabajadores en línea 20 veces más rápido, y dado que los clones heredan
+los buffers cálidos de sus padres, alcanzan antes su pico de performance.
+ 
+%With an API for the programmatic control of VM Cloning with bindings
+%in C, C++, Python and Java, SnowFlock is extremely flexible and
+%versatile.  We've successfully used SnowFlock in prototype
+%implementations of several, quite different, systems.  In parallel
+%computation scenarios, we've achieved excellent results by explicitly
+%cloning worker VMs that cooperatively distribute the load across many
+%physical hosts. For parallel applications that use the Message Passing
+%Interface (MPI) and typically run on a cluster of dedicated servers,
+%we modified the MPI startup manager to provide unmodified applications
+%with good performance and much less overhead by provisioning a fresh
+%cluster of clones on demand for each run. Finally, in a quite
+%different use case, we used SnowFlock to improve the efficiency and
+%performance of elastic servers.  Today's cloud-based elastic servers
+%boot new, cold workers as needed to service spikes in demand. By
+%cloning a running VM instead, SnowFlock brings new workers on line 20
+%times faster, and because clones inherit the warm buffers of their
+%parent, they reach their peak performance sooner.
+
+\end{aosasect1}
+
+\begin{aosasect1}{Clonación VM}
+%\begin{aosasect1}{VM Cloning}
+
+Como su nombre indica, los clones de VM son (casi) idénticos a sus VM\@ 
+padres. En realidad, hay algunas diferencias, menores pero necesarias, para
+evitar problemas como la colisión de direcciones MAC, pero volveremos
+a ello más adelante. Para crear un clon, el total del disco local y el 
+estado de la memoria deben estar disponibles, lo que nos lleva a la 
+primera gran disyuntiva sobre el diseño: deberíamos copiar ese estado inicial
+o solo hacerlo bajo demanda? 
+
+%As the name suggests, VM clones are (nearly) identical to their parent
+%VM\@. There are actually some minor but necessary differences to avoid
+%issues such as MAC address collisions, but we'll come back to that
+%later. To create a clone, the entire local disk and memory state must
+%be made available, which brings us to the first major design tradeoff:
+%should we copy that state up-front or on demand?
+
+La forma más sencilla de lograr la clonación VM es la adaptación de la 
+capacidad de ``migración'' estándar de VM. Generalmente, la migración se
+usa cuando un VM en funcionamiento requiere ser movido a un host diferente, 
+como cuando el host se sobrecarga o debe ponerse fuera de servicio por 
+mantenimiento. Puesto que la VM es puramente software, puede ser encapsulado
+en un archivo de datos que luego puede ser copiado en un nuevo y más 
+apropiado host, donde retoma la ejecución tras una breve interrupción. 
+Para lograr esto, VMMs fuera de la plataforma crean un archivo que contiene 
+un ``puesto de control'' (checkpoint) de la VM, incluyendo su sistema local
+de ficheros, imagen de memoria, registros de CPU virtual (VCPU), etc. En 
+la migración, la copia recientemente en funcionamiento, reemplaza el original, 
+pero el proceso puede ser alterado para producir un clon mientras se deja
+a la original en funcionamiento. En este ``apremiante'' proceso, todo el 
+estado de la VM es transferido desde el principio, lo que proporciona el 
+mejor rendimiento inicial, debido a que todo el estado de la VM se encuentra 
+en su lugar cuando la ejecución comienza. La desventaja de la replicación 
+de procesos apremiantes es que el trabajoso proceso de copiar una VM entera
+debe ocurrir antes de que la ejecución se inicie, lo que ralentiza 
+significativamente la creación de instancias.    
+
+
+%The simplest way to achieve VM cloning is to adapt the standard VM
+%``migration'' capability.  Typically, migration is used when a running
+%VM needs to be moved to a different host, such as when the host
+%becomes overloaded or must be brought down for maintenance. Because
+%the VM is purely software, it can be encapsulated in a data file that
+%can then be copied to a new, more appropriate host, where it picks up
+%execution after a brief interruption. To accomplish this,
+%off-the-shelf VMMs create a file containing a ``checkpoint'' of the VM,
+%including its local filesystem, memory image, virtual CPU (VCPU)
+%registers, etc. In migration, the newly booted copy replaces the
+%original, but the process can be altered to produce a clone while
+%leaving the original running. In this ``eager'' process, the entire VM
+%state is transferred up front, which provides the best initial
+%performance, because the entire state of the VM is in place when
+%execution begins.  The disadvantage of eager replication is that the
+%laborious process of copying the entire VM must happen before
+%execution can begin, which significantly slows instantiation.
+
+
+En el otro extremo, adoptado por SnowFlock es la replicación ``perezosa''
+de estado. En vez de copiar todo lo que la VM puede llegar a precisar,
+SnowFlock transfiere solo los bits vitales requeridos para iniciar la ejecución,
+y transfiere el estado más tarde, sólo cuando el clon lo necesita. Esto tiene
+dos ventajas. Primero, minimiza la latencia de la creación de instancias
+al hacer la menor cantidad de trabajo posible por adelantado. En segundo 
+lugar, incrementa la eficiencia al copiar solo el estado que está siendo
+realmente usado por el clon. El rendimiento de este beneficio, por 
+supuesto, depende del comportamiento del clon, pero pocas aplicaciones
+acceden a cada página de memoria y a cada archivo en el sistema de ficheros local.   
+
+%The other extreme, adopted by SnowFlock, is ``lazy'' state
+%replication.  Instead of copying everything the VM might ever need,
+%SnowFlock transfers only the vital bits needed to begin execution, and
+%transfers state later, only when the clone needs it. This has two
+%advantages.  First, it minimizes the instantiation latency by doing as
+%little work as possible up front. Second, it increases the efficiency
+%by copying only the state that is actually used by the clone. The
+%yield of this benefit, of course, depends on the clone's behavior, but
+%few applications access every page of memory and every file in the
+%local filesystem.
+
+
+Sin embargo, los beneficios de la replicación perezosa no son gratuitos. 
+Puesto que la transferencia de estado es pospuesta hasta último momento,
+el clon queda en espera de la llegada del estado para poder continuar
+con la ejecución. Ésta situación es comparable con los cambios de memoria a disco 
+en la estación de trabajo de tiempo compartido: las aplicaciones
+son bloqueadas esperando que se obtenga el estado desde una fuente de alta 
+latencia. En el caso de SnowFlock, el bloqueo degrada en cierto grado, el rendimiento
+de los clones; la severidad de la desaceleración depende de la aplicación.
+Para aplicaciones de alto rendimiento informático, hemos encontrado que la 
+gradación tiene poco impacto, pero un servidor de base de datos clonado
+puede desempeñarse pobremente en un principio. Debe notarse que es un efecto
+transitorio: en pocos minutos, la mayor parte del estado necesario ha sido
+transferido y la performance del clon es comparable con la de sus padres.
+
+%However, the benefits of lazy replication aren't free. Because the
+%state transfer is postponed until the last moment, the clone is left
+%waiting for state to arrive before it can continue execution. This
+%This situation parallels swapping of memory to disk in time-shared workstation:
+%applications are blocked waiting for state to be fetched from a high latency source.
+%In the case of SnowFlock, the 
+%blocking somewhat degrades the clone's performance; the severity of
+%the slowdown depends on the application.  For high performance
+%computing applications we've found this degradation has little impact,
+%but a cloned database server may perform poorly at first. It should be
+%noted that this is a transient effect: within a few minutes, most of
+%the necessary state has been transferred and the clone's performance
+%matches that of the parent.
+
+Como acotación, si usted está bien interiorizado en VMs, seguramente 
+se preguntará si las optimizaciones usadas por migraciones ``vivas''
+son útiles en este contexto. La migración viva es optimizada para acortar el 
+intervalo entre la suspensión de la VM original y la reanudación de la ejecución
+por parte de la nueva copia. Para lograrlo, el Monitor de Máquina Virtual (Virtual Machine Monitor)
+(VMM) pre-copia el estado de la VM mientras el original se está ejecutando,
+para que después de suspenderlo, solo sea necesaria la transferencia de las 
+páginas recientemente cambiadas. Ésta técnica no afecta el intervalo entre el pedido
+de migración y el tiempo en que la copia comienza la ejecución, y por ello, no reduciría
+la latencia de instancias de la ``apremiante'' clonación de VM
+
+%As an aside, if you're well versed in VMs, you're likely wondering if
+%the optimizations used by ``live'' migration are useful here. Live
+%migration is optimized to shorten the interval between the original
+%VM's suspension and the resumption of execution by the new copy.  To
+%accomplish this, the Virtual Machine Monitor (VMM) pre-copies the VM's state while the original
+%is still running, so that after suspending it, only the recently
+%changed pages need to be transferred. This technique does not affect
+%the interval between the migration request and the time the copy
+%begins execution, and so would not reduce the instantiation latency of
+%eager VM cloning.
+
+
+\end{aosasect1}
+
+\begin{aosasect1}{El enfoque SnowFlock}
+%\begin{aosasect1}{SnowFlock's Approach}
+
+SnowFlock implementa la clonación VM con un primitivo llamado ``VM Fork'',
+que es similar a un estándar Unix \code{fork}, pero con algunas diferencias
+importantes. En primer lugar, en vez de duplicar un único proceso, VM Fork duplica 
+una VM completa, incluida toda la memoria, todos los procesos y dispositivos
+virtuales y el sistema de ficheros local. En segundo lugar, en vez de 
+producir una sola copia que se ejecute sobre el mismo host físico, VM Fork puede
+simultáneamente generar muchas copias en paralelo. Por último, VMs pueden ser
+bifurcadas (fork) a distintos servidores físicos, lo que permite aumentar la huella
+de la cloud según sea necesario.
+  
+%SnowFlock implements VM cloning with a primitive called ``VM Fork'',
+%which is like a standard Unix \code{fork}, but with a few
+%important differences.  First, rather than duplicating a single
+%process, VM Fork duplicates an entire VM, including all of memory, all
+%processes and virtual devices, and the local filesystem.  Second,
+%instead of producing a single copy running on the same physical host,
+%VM Fork can simultaneously spawn many copies in parallel. Finally, VMs
+%can be forked to distinct physical servers, letting you quickly
+%increase your cloud footprint as needed.
+
+Los siguientes conceptos son claves para SnowFlock:
+%The following concepts are key to SnowFlock:
+
+\begin{aosaitemize}
+
+  \item Virtualización: La VM encapsula el ambiente del cálculo
+  haciendo posible la clonación de máquina y clouds.
+
+  %\item Virtualization: The VM encapsulates the computation
+  %environment, making clouds and machine cloning possible.
+
+  \item Propagación perezosa: El estado de la VM no es copiado hasta
+  que sea necesario, lo que permite que los clones cobren vida en pocos
+  segundos.
+  
+  %\item Lazy Propagation: The VM state isn't copied until it's needed,
+  %so clones come alive in a few seconds.
+
+  \item Multicast: Los clones hermanos tienen necesidades similares
+  en términos de estado de VM. Con multicast, docenas de clones empiezan 
+  a ejecutarse tan rápido como uno solo.
+
+  %\item Multicast: Clone siblings have similar needs in terms of VM
+  %state. With multicast, dozens of clones start running as quickly
+  %as one.
+  
+  \item Errores de Página: Cuando un clon intenta usar memoria perdida,
+  falla y desencadena una petición a los padres. La ejecución del clon
+  se bloquea hasta que arriba la página necesaria. 
+  
+  %\item Page Faults: When a clone tries to use missing memory,it
+  %faults and triggers a request to the parent. The clone's execution
+  %is blocked until the needed page arrives.
+  
+  \item Copia en Escritura (CoW): Al tomar una copia de sus páginas 
+  de memoria y disco antes de sobreescribirlos, los VM padres pueden
+  continuar en ejecución a la vez que preservan una copia congelada
+  de sus estados para ser usado por los clones.
+  
+  %\item Copy on Write (CoW): By taking a copy of its memory and disk
+  %pages before overwriting them, the parent VM can continue to run
+  %while preserving a frozen copy of its state for use by the clones.
+
+\end{aosaitemize}
+
+Hemos implementado SnowFlock utilizando el sistema de virtualización Xen,
+por lo que resulta útil introducir algunas terminologías específicas de
+Xen para mayor claridad. En un entorno Xen, la VMM es llamada hypervisor y las VMs
+son llamadas dominios. En cada máquina física (host), hay un dominio
+con privilegios, llamado ``domain 0'' (dom0), que tiene acceso total 
+a la host y a sus dispositivos físicos, y puede ser usada para controlar
+las VMs huéspedes o ``usuaria'', llamadas ``domain U'' (domU).
+
+%We've implemented SnowFlock using the Xen virtualization system, so
+%it's useful to introduce some Xen-specific terminology for clarity. In
+%a Xen environment, the VMM is called the hypervisor, and VMs are
+%called domains. On each physical machine (host), there is a privileged
+%domain, called ``domain 0'' (dom0), that has full access to the host
+%and its physical devices, and can be used to control additional guest, or ``user'',
+%VMs that are called ``domain U'' (domU).
+
+A grandes rasgos, SnowFlock consiste en un conjunto de modificaciones
+del hypervisor Xen que le permiten recuperarse sin problemas cuando 
+se accede a recursos que faltan, y un conjunto de procesos y sistemas
+de soporte que se ejecutan en dom0 y que de manera cooperativa transfieren
+el estado faltante de la VM, y algunas modificaciones opcionales al OS de
+ejecución dentro de las VM clones. Hay seis componentes principales.
+
+%In broad strokes, SnowFlock consists of a set of modifications to the
+%Xen hypervisor that enable it to smoothly recover when missing
+%resources are accessed, and a set of supporting processes and systems
+%that run in dom0 and cooperatively transfer the missing VM state, and
+%some optional modifications to the OS executing inside clone
+%VMs. There are six main components.
+
+\begin{aosaitemize}
+
+
+  \item Descriptor VM: Este pequeño objeto se utiliza para sembrar
+  el clon, y tiene el esqueleto de la VM necesario para comenzar la 
+  ejecución. Le falta el carácter y el músculo necesario para realizar
+  cualquier trabajo útil.
+ 
+  %\item VM Descriptor: This small object is used to seed the clone,
+  %and holds the bare-bones skeleton of the VM as needed to begin
+  %execution.  It lacks the guts and muscle needed to perform any
+  %useful work.
+  
+  \item Sistema de Distribución Multicast (\code{mcdist}): Este sistema
+  de nivel superior distribuye eficientemente la información de estado de
+  la VM de manera simultánea a todos los clones.
+  
+  %\item Multicast Distribution System (\code{mcdist}): This
+  %parent-side system efficiently distributes the VM state
+  %information simultaneously to all clones.
+
+  \item Proceso del Servidor de Memoria: Este proceso de nivel superior
+  mantiene una copia congelada del estado de los padres, y lo pone a 
+  disposición de todos los clones, a través de \code{mcdist}.  
+ 
+  %\item Memory Server Process: This parent-side process maintains a
+  %frozen copy of the parent's state, and makes it available to all
+  %clones on demand through \code{mcdist}.
+
+  \item Proceso Memtap: Este proceso del lado de los clones, actúa
+  en nombre de los clones, y se comunica con el servidor de memoria
+  para solicitar las páginas que se necesitan pero faltan.
+  
+  %\item Memtap Process: This clone-side process acts on the clone's
+  %behalf, and communicates with the memory server to request pages
+  %that are needed but missing.
+
+  \item Información Clon: El kernel invitado que se ejecuta dentro 
+  de los clones puede aliviar la transferencia a pedido del estado de 
+  la VM al proporcionar consejos para el VMM\@. Esto es opcional pero
+  altamente deseable para la eficiencia.
+
+  %\item Clone Enlightenment: The guest kernel running inside the
+  %clones can alleviate the on-demand transfer of VM state by
+  %providing hints to the VMM\@. This is optional but highly desirable
+  %for efficiency.
+
+  \item Pila de Control: Los deamons se ejecutan en cada host físico 
+  para organizar los otros componentes y gestionar el SnowFlock padre y 
+  las VMs clones.
+
+  %\item Control Stack: Daemons run on each physical host to
+  %orchestrate the other components and manage the SnowFlock parent and clone VMs.
+
+\end{aosaitemize}
+
+\aosafigure{../images/snowflock/drawing.pdf}{SnowFlock VM Replication Architecture}{fig.snowflock.arch}
+
+Gráficamente, \aosafigref{fig.snowflock.arch} muestra el proceso 
+de clonación de una VM, con los cuatro pasos principales: (1) suspensión
+de la VM padre para producir un descriptor de arquitectura, (2) difusión
+de este descriptor a todos los host de destino, (3) inicio de los clones
+que desconocen la mayor parte del estado, y (4) propagación del estado 
+bajo demanda. La figura también muestra el uso de la distribución 
+multicast con \code{mcdist}, y busca la evasión vía información huésped.
+ 
+%Pictorially speaking, \aosafigref{fig.snowflock.arch} depicts the
+%process of cloning a VM, showing the the four main steps: (1)
+%suspending the parent VM to produce an architectural descriptor; (2)
+%distributing this descriptor to all target hosts; (3) initiating
+%clones that are mostly empty state-wise; and (4) propagating state
+%on-demand. The figure also depicts the use of multicast distribution
+%with \code{mcdist}, and fetch avoidance via guest enlightenment.
+
+Si está interesado en probar SnowFlock, éste se encuentra disponible en 
+dos sabores. La documentación y el código fuente abierto del proyecto
+de investigación original SnowFlock de la Universidad de Toronto se encuentran 
+disponibles en \footnote{\url{http://sysweb.cs.toronto.edu/projects/1}}
+Si prefiere probar la versión de fuerza industrial, está disponible una
+licencia libre y no comercial en GridCentric 
+Inc.\footnote{\url{http://www.gridcentriclabs.com/architecture-of-open-source-applications}}
+Debido a que SnowFlock incluye cambios en el hypervisor y requiere acceso
+a dom0, instalar SnowFlock requiere acceso privilegiado a las máquinas
+host. Por esta razón, necesitará usar su propio hardware, y no será
+capaz de probarlo como un usuario en un entorno cloud comercial como
+EC2 de Amazon.
+
+%If you're interested in trying SnowFlock, it's available in two
+%flavors.  The documentation and open source code for the original
+%University of Toronto SnowFlock research project are
+%available\footnote{\url{http://sysweb.cs.toronto.edu/projects/1}}
+%If you'd prefer to take 
+%the industrial-strength version for a spin, a free, non-commercial
+%license is available from GridCentric 
+%Inc.\footnote{\url{http://www.gridcentriclabs.com/architecture-of-open-source-applications}}
+%Because SnowFlock includes changes to the hypervisor and requires
+%access to dom0, installing SnowFlock requires privileged access on the
+%host machines. For that reason, you'll need to use your own hardware,
+%and won't be able to try it out as a user in a commercial cloud
+%environment such as Amazon's EC2.
+
+A lo largo de las próximas secciones describiremos las diferentes
+piezas que cooperan para alcanzar una clonación instantánea y eficiente.
+Todas las piezas que describiremos encajan como muestra en la figura
+\aosafigref{fig.snowflock.components}.
+
+%Throughout the next few sections we'll describe the different pieces
+%that cooperate to achieve instantaneous and efficient cloning. All
+%the pieces we will describe fit together as shown in
+%\aosafigref{fig.snowflock.components}.
+
+\aosafigure{../images/snowflock/drawing-arch.eps}{Software Components of SnowFlock}{fig.snowflock.components}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Architectural VM Descriptor}
+
+The key design decision for SnowFlock is to postpone the replication
+of VM state to a lazy runtime operation. In other words, copying the
+memory of a VM is a late binding operation, allowing for many
+opportunities for optimization.
+
+The first step to carry out this design decision is the generation of
+an architectural descriptor of the VM state. This is the seed that
+will be used to create clone VMs. It contains the bare minimum
+necessary to create a VM and make it schedulable. As the name implies,
+this bare minimum consists of data structures needed by the underlying
+architectural specification.  In the case of SnowFlock, the
+architecture is a combination of Intel x86 processor requirements and
+Xen requirements. The architectural descriptor thus contains data
+structures such as page tables, virtual registers, device metadata,
+wallclock timestamps, etc. We refer the interested reader to~\cite{bib:snowflocktocs}
+for an in-depth description of the contents of the
+architectural descriptor.
+
+An architectural descriptor has three important properties: First, it
+can be created in little time; 200 milliseconds is not
+uncommon. Second, it is small, typically three orders of magnitude
+smaller than the memory allocation of the originating VM (1 MB for a 1
+GB VM). And third, a clone VM can be created from a descriptor in less
+than a second (typically 800 milliseconds).
+
+The catch, of course, is that the cloned VMs are missing most of their
+memory state by the time they are created from the descriptor. The
+following sections explain how we solve this problem---and how we take
+advantage of the opportunities for optimization it presents.
+
+\end{aosasect1}
+
+\begin{aosasect1}{Parent-Side Components}
+
+Once a VM is cloned it becomes a parent for its children or
+clones.  Like all responsible parents, it needs to look out for the
+well-being of its descendants. It does so by setting up a set of
+services that provision memory and disk state to cloned VMs on demand.
+
+\begin{aosasect2}{Memserver Process}
+
+When the architectural descriptor is created, the VM is stopped in its
+tracks throughout the process. This is so the VM memory state settles;
+before actually pausing a VM and descheduling from execution,
+internal OS drivers quiesce into a state from which clones can
+reconnect to the external world in their new enclosing VMs. We take
+advantage of this quiescent state to create a ``memory server'',
+or \code{memserver}.
+
+The memory server will provide all clones with the bits of memory they
+need from the parent. Memory is propagated at the granularity of an
+x86 memory page (4 kbytes). In its simplest form, the memory server sits
+waiting for page requests from clones, and serves one page at a time,
+one clone at a time.
+
+However, this is the very same memory the parent VM needs to use to
+keep executing. If we would allow the parent to just go ahead and
+modify this memory, we would serve corrupted memory contents to clone
+VMs: the memory served would be different from that at the point of
+cloning, and clones would be mightily confused. In kernel hacking
+terms, this is a sure recipe for stack traces.
+
+To circumvent this problem, a classical OS notion comes to the rescue:
+Copy-on-Write, or CoW memory. By enlisting the aid of the Xen
+hypervisor, we can remove writing privileges from all pages of memory
+in the parent VM\@. When the parent actually tries to modify one page, a
+hardware page fault is triggered.  Xen knows why this happened, and
+makes a copy of the page. The parent VM is allowed to write to the original
+page and continue execution, while the memory server is told to use
+the copy, which is kept read-only. In this manner, the memory state at the point of cloning
+remains frozen so that clones are not confused, while the parent is
+able to proceed with execution. The overhead of CoW is minimal:
+similar mechanisms are used by Linux, for example, when creating new
+processes.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Multicasting with Mcdist}
+
+Clones are typically afflicted with an existential syndrome known as
+``fate determinism.'' We expect clones to be created for a single
+purpose: for example, to align X chains of DNA against a segment Y of
+a database. Further, we expect a set of clones to be created so that
+all siblings do the same, perhaps aligning the same X chains against
+different segments of the database, or aligning different chains
+against the same segment Y\@. Clones will thus clearly exhibit a great
+amount of temporal locality in their memory accesses: they will use
+the same code and large portions of common data.
+
+We exploit the opportunities for temporal locality through \code{mcdist}, our
+own multicast distribution system tailored to SnowFlock. Mcdist uses
+IP multicast to simultaneously distribute the same packet to a set of
+receivers. It takes advantage of network hardware parallelism to
+decrease the load on the memory server. By sending a reply to all
+clones on the first request for a page, each clone's requests act as a
+prefetch for its siblings, because of their similar memory access
+patterns.
+
+Unlike other multicast systems, \code{mcdist} does not have to be reliable,
+does not have to deliver packets in an ordered manner, and does not
+have to atomically deliver a reply to all intended
+receivers. Multicast is strictly an optimization, and delivery need
+only be ensured to the clone explicitly requesting a page. The design
+is thus elegantly simple: the server simply multicasts responses,
+while clients time-out if they have not received a reply for a
+request, and retry the request.
+
+Three optimizations specific to SnowFlock are included in \code{mcdist}:
+
+\begin{aosaitemize}
+
+  \item Lockstep Detection: When temporal locality does happen,
+  multiple clones request the same page in very close
+  succession. The \code{mcdist} server ignores all but the first of such
+  requests.
+
+  \item Flow Control: Receivers piggyback their receive rate on
+  requests.  The server throttles its sending rate to a weighted
+  average of the clients' receive rate. Otherwise, receivers will be
+  drowned by too many pages sent by an eager server.
+
+  \item End Game: When the server has sent most pages, it falls back
+    to unicast responses. Most requests at this point are retries, and
+    thus blasting a page through the wire to all clones is
+    unnecessary.
+
+\end{aosaitemize}
+
+\end{aosasect2}
+
+\begin{aosasect2}{Virtual Disk}
+
+SnowFlock clones, due to their short life span and fate determinism,
+rarely use their disk. The virtual disk for a SnowFlock VM houses the
+root partition with binaries, libraries and configuration files. Heavy
+data processing is done through suitable filesystems such as HDFS
+(\aosachapref{s:hdfs}) or PVFS\@. Thus, when SnowFlock clones decide
+to read from their root disk, they typically have their requests
+satisfied by the kernel filesystem page cache.
+
+Having said that, we still need to provide access to the virtual disk
+for clones, in the rare instance that such access is needed. We
+adopted the path of least resistance here, and implemented the disk by
+closely following the memory replication design. First, the state of
+the disk is frozen at the time of cloning. The parent VM keeps using
+its disk in a CoW manner: writes are sent to a separate location in
+backing storage, while the view of the disk clones expect remains
+immutable.  Second, disk state is multicast to all clones, using
+\code{mcdist}, with the same 4 KB page granularity, and under the same
+expectations of temporal locality. Third, replicated disk state for a
+clone VM is strictly transient: it is stored in a sparse flat file
+which is deleted once the clone is destroyed.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Clone-Side Components}
+
+Clones are hollow shells when they are created from an architectural
+descriptor, so like everybody else, they need a lot of help from their
+parents to grow up: the children VMs move out and immediately call
+home whenever they notice something they need is missing, asking their
+parent to send it over right away.
+
+\begin{aosasect2}{Memtap Process}
+
+Attached to each clone after creation, the \code{memtap} process is the
+lifeline of a clone. It maps all of the memory of the clone and fills
+it on demand as needed.  It enlists some crucial bits of help from the
+Xen hypervisor: access permission to the memory pages of the clones is
+turned off, and hardware faults caused by first access to a page are
+routed by the hypervisor into the \code{memtap} process.
+
+In its simplest incarnation, the \code{memtap} process simply asks the
+memory server for the faulting page, but there are more complicated
+scenarios as well.  First, \code{memtap} helpers use \code{mcdist}. This means that at any
+point in time, any page could arrive by virtue of having been
+requested by another clone---the beauty of asynchronous
+prefetching. Second, we allow SnowFlock VMs to be multi-processor VMs.
+There wouldn't be much fun otherwise. This means that multiple faults
+need to be handled in parallel, perhaps even for the same page.
+Third, in later versions \code{memtap} helpers can explicitly prefetch a
+batch of pages, which can arrive in any order given the lack of
+guarantees from the \code{mcdist} server.  Any of these factors could have led
+to a concurrency nightmare, and we have all of them.
+
+The entire \code{memtap} design centers on a page presence bitmap. The bitmap
+is created and initialized when the architectural descriptor is
+processed to create the clone VM\@.
+The bitmap is a flat bit array sized by the number of pages the VM's memory can hold. 
+Intel processors have handy atomic
+bit mutation instructions: setting a bit, or doing a test and set, can
+happen with the guarantee of atomicity with respect to other
+processors in the same box.  This allows us to avoid
+locks in most cases, and thus to provide access to the bitmap by
+different entities in different protection domains: the Xen
+hypervisor, the \code{memtap} process, and the cloned guest kernel itself.
+
+When Xen handles a hardware page fault due to a first access to a
+page, it uses the bitmap to decide whether it needs to alert
+\code{memtap}. It also uses the bitmap to enqueue multiple faulting virtual
+processors as dependent on the same absent page. Memtap buffers pages
+as they arrive.  When its buffer is full or an explicitly requested
+page arrives, the VM is paused, and the bitmap is used to discard any
+duplicate pages that have arrived but are already present. Any
+remaining pages that are needed are then copied into the VM memory,
+and the appropriate bitmap bits are set.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Clever Clones Avoid Unnecessary Fetches}
+
+We just mentioned that the page presence bitmap is visible to the
+kernel running inside the clone, and that no locks are needed to
+modify it. This gives clones a powerful ``enlightenment'' tool: they can prevent the
+fetching of pages by modifying the bitmap and pretending they are
+present. This is extremely useful performance-wise, and safe to do
+when pages will be completely overwritten before they are used.
+
+There happens to be a very common situation when this happens and
+fetches can be avoided. All memory allocations in the kernel (using
+\code{vmalloc}, \code{kzalloc}, \code{get\_free\_page},
+user-space \code{brk}, and the like) are ultimately
+handled by the kernel page allocator. Typically pages are requested by
+intermediate allocators which manage finer-grained chunks: the slab
+allocator, the glibc malloc allocator for a user-space process,
+etc. However, whether allocation is explicit or implicit,
+one key semantic implication
+always holds true: no one cares about what the page contained,
+because its contents will be arbitrarily overwritten. Why
+fetch such a page, then? There is no reason to do so, and empirical
+experience shows that avoiding such fetches is tremendously
+advantageous.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{VM Cloning Application Interface}
+
+So far we have focused on the internals of cloning a VM
+efficiently. As much fun as solipsistic systems can be, we need to
+turn our attention to those who will use the system: applications.
+
+\begin{aosasect2}{API Implementation}
+
+VM Cloning is offered to the application via the simple SnowFlock API,
+depicted in \aosafigref{fig.snowflock.cloningapi}. Cloning is
+basically a two-stage process. You first request an allocation for the
+clone instances, although due to the system policies that are in effect, that
+allocation may be smaller than requested.  Second, you use the
+allocation to clone your VM\@.  A key assumption is that your VM focuses
+on a single operation.  VM Cloning is appropriate for
+single-application VMs such as a web server or a render farm
+component.  If you have a hundred-process desktop environment in which
+multiple applications concurrently call VM cloning, you're headed for
+chaos.
+
+\begin{table}\centering
+  \begin{tabular}{ |l p{7cm}| }
+    \hline
+    \code{sf\_request\_ticket(n)}
+    &
+    Requests an allocation for \code{n} clones.  Returns a
+    \code{ticket} describing an allocation for \code{m$\leq$n}
+    clones.
+    \\
+
+    \code{sf\_clone(ticket)}
+    &
+    Clones, using the \code{ticket} allocation. Returns the clone
+    \code{ID}, \code{0$\leq$ID{\textless}m}.
+    \\
+
+    \code{sf\_checkpoint\_parent()}
+    &
+    Prepares an immutable checkpoint \code{C} of the parent VM to be
+    used for creating clones at an arbitrarily later time.
+    \\
+
+    \code{sf\_create\_clones(C, ticket)}
+    &
+    Same as \code{sf\_clone}, uses the checkpoint \code{C}.
+    Clones will begin execution at the point at which
+    the corresponding \code{sf\_checkpoint\_parent()} was invoked.
+    \\
+
+    \code{sf\_exit()}
+    &
+    For children \code{(1$\leq$ID{\textless}m)}, terminates
+    the child.
+    \\
+
+    \code{sf\_join(ticket)}
+    &
+    For the parent \code{(ID = 0)}, blocks until all children in the
+    \code{ticket} reach their \code{sf\_exit} call.  At that point all
+    children are terminated and the \code{ticket} is discarded.
+    \\
+
+    \code{sf\_kill(ticket)}
+    &
+    Parent only, discards \code{ticket} and immediately kills all
+    associated children.
+    \\
+    \hline
+  \end{tabular}
+  \caption{The SnowFlock VM Cloning API}
+  \label{fig.snowflock.cloningapi}
+\end{table}
+
+The API simply marshals messages and posts them to the XenStore, a
+shared-memory low-throughput interface used by Xen for control plane
+transactions. A SnowFlock Local Daemon (SFLD) executes on the
+hypervisor and listens for such requests. Messages are unmarshalled,
+executed, and requests posted back.
+
+Programs can control VM Cloning directly through the API, which is
+available for C, C++, Python and Java. Shell scripts that harness the
+execution of a program can use the provided command-line scripts
+instead.  Parallel frameworks such as MPI can embed the API: MPI
+programs can then use SnowFlock without even knowing, and with no
+modification to their source.
+Load balancers sitting in front of web or application
+servers can use the API to clone the servers they manage.
+
+SFLDs orchestrate the execution of VM Cloning requests. They create
+and transmit architectural descriptors, create cloned VMs, launch disk
+and memory servers, and launch \code{memtap} helper processes.  They are a
+miniature distributed system in charge of managing the VMs in a
+physical cluster.
+
+SFLDs defer allocation decisions to a central SnowFlock Master Daemon
+(SFMD).  SFMD simply interfaces with appropriate cluster management
+software. We did not see any need to reinvent the wheel here, and
+deferred decisions on resource allocation, quotas, policies, etc.\  to
+suitable software such as Sun Grid Engine or Platform EGO.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Necessary Mutations}
+
+After cloning, most of the cloned VM's processes have no idea that
+they are no longer the parent, and that they are now running in a
+copy. In most aspects, this just works fine and causes no
+issues. After all, the primary task of the OS is to isolate
+applications from low-level details, such as the network identity.
+Nonetheless, making the transition smooth requires a set of mechanisms
+to be put in place. The meat of the problem is in managing the clone's
+network identity; to avoid conflicts and confusion, we must introduce
+slight mutations during the cloning process.  Also, because these
+tweaks may necessitate higher-level accommodations, a hook is inserted
+to allow the user to configure any necessary tasks, such as
+(re)mounting network filesystems that rely on the clone's identity.
+
+Clones are born to a world that is mostly not expecting them. The
+parent VM is part of a network managed most likely by a DHCP server,
+or by any other of the myriad ways sysadmins find to do their
+job. Rather than assume a necessarily inflexible scenario, we place
+the parent and all clones in their own private virtual network. Clones
+from the same parent are all assigned a unique ID, and their IP
+address in this private network is automatically set up upon cloning
+as a function of the ID\@. This guarantees that no intervention from a
+sysadmin is necessary, and that no IP address collisions will ever
+happen.
+
+IP reconfiguration is performed directly by a hook we place on the
+virtual network driver. However, we also rig the driver to
+automatically generate synthetic DHCP responses. Thus, regardless of
+your choice of distribution, your virtual network interface will
+ensure that the proper IP coordinates are propagated to the guest OS,
+even when you are restarting from scratch.
+
+To prevent clones from different parents colliding with each others'
+virtual private networks---and to prevent mutual DDoS attacks---clone
+virtual network are isolated at the Ethernet (or layer 2) level. We
+hijack a range of Ethernet MAC OUIs~\footnote{OUI, or Organizational Unique ID,
+is a range of MAC addresses assigned to a vendor.} and dedicate them to clones. The
+OUI will be a function of the parent VM\@. Much like the ID of a VM
+determines its IP address, it also determines its non-OUI Ethernet MAC
+address.  The virtual network driver translates the MAC address the VM
+believes it has to the one assigned as a function of its ID, and
+filters out all traffic to and from virtual private network with
+different OUIs. This isolation is equivalent to that achievable via
+\code{ebtables}, although much simpler to implement.
+
+Having clones talk only to each other may be fun, but not fun enough.
+Sometimes we will want our clones to reply to HTTP requests from the
+Internet, or mount public data repositories. We equip any set of
+parent and clones with a dedicated router VM\@. This tiny VM performs
+firewalling, throttling and NATing of traffic from the clones to the
+Internet. It also limits inbound connections to the parent VM and
+well-known ports.  The router VM is lightweight but represents a
+single point of centralization for network traffic, which can
+seriously limit scalability. The same network rules could be applied
+in a distributed fashion to each host upon which a clone VM runs. We
+have not released that experimental patch.
+
+SFLDs assign IDs, and teach the virtual network drivers how they
+should configure themselves: internal MAC and IP addresses, DHCP
+directives, router VM coordinates, filtering rules, etc.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Conclusion}
+
+By tweaking the Xen hypervisor and lazily transferring the VM's state,
+SnowFlock can produce dozens of clones of a running VM in a few
+seconds. Cloning VMs with SnowFlock is thus instantaneous and
+live---it improves cloud usability by automating cluster management
+and giving applications greater programmatic control over the cloud
+resources. SnowFlock also improves cloud agility by speeding up VM
+instantiation by a factor of 20, and by improving the performance of
+most newly created VMs by leveraging their parent's warm, in-memory OS
+and application caches. The keys to SnowFlock's efficient performance
+are heuristics that avoid unnecessary page fetches, and the multicast
+system that lets clone siblings cooperatively prefetch their
+state. All it took was the clever application of a few tried-and-true
+techniques, some sleight of hand, and a generous helping of
+industrial-strength debugging.
+
+We learned two important lessons throughout the SnowFlock experience.
+The first is the often-underestimated value of the KISS theorem. We
+were expecting to implement complicated prefetching techniques to
+alleviate the spate of requests for memory pages a clone would issue
+upon startup.  This was, perhaps surprisingly, not necessary. The
+system performs very well for many workloads based on one single
+principle: bring the memory over as needed.  Another example of the
+value of simplicity is the page presence bitmap. A simple data
+structure with clear atomic access semantics greatly simplifies what
+could have been a gruesome concurrency problem, with multiple virtual
+CPUs competing for page updates with the asynchronous arrival of pages
+via multicast.
+
+The second lesson is that scale does not lie. In other words, be
+prepared to have your system shattered and new bottlenecks uncovered
+every time you bump your scale by a power of two. This is intimately
+tied with the previous lesson: simple and elegant solutions scale well
+and do not hide unwelcome surprises as load increases. A prime example
+of this principle is our \code{mcdist} system. In large-scale tests, a
+TCP/IP-based page distribution mechanism fails miserably for hundreds
+of clones. Mcdist succeeds by virtue of its extremely constrained and
+well-defined roles: clients only care about their own pages; the
+server only cares about maintaining a global flow control. By keeping
+\code{mcdist} humble and simple, SnowFlock is able to scale extremely well.
+
+If you are interested in knowing more, you can visit the University of
+Toronto site\footnote{\url{http://sysweb.cs.toronto.edu/projects/1}} for the
+academic papers and open-source code licensed under GPLv2, and
+GridCentric\footnote{\url{http://www.gridcentriclabs.com/}} for an industrial strength
+implementation.
+
+\end{aosasect1}
+
+\end{aosachapter}
+

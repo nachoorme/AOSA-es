@@ -1,0 +1,1147 @@
+\addtocontents{toc}{\vspace{\baselineskip}}
+\begin{aosachapter}{Mercurial}{s:mercurial}{Dirkjan Ochtman}
+
+Mercurial es un moderno sistema de control de versiones distribuido (VCS, por sus siglas en inglés), escrito en su mayoría en Python, 
+con partes y piezas en C por temas de rendimiento. En este capítulo
+discutiré algunas de las decisiones involucradas en el diseño de los algoritmos y estructuras de datos de Mercurial. Primero, permítame 
+presentarle una corta historia de los sistemas de control de versiones, para fijar el contexto.
+
+%Mercurial is a modern distributed version control system (VCS), written
+%mostly in Python with bits and pieces in C for performance. In this
+%chapter, I will discuss some of the decisions involved in designing
+%Mercurial's algorithms and data structures. First, allow me to go into
+%a short history of version control systems, to add necessary context.
+
+\begin{aosasect1}{ Corta Historia del Control de Versiones}
+%\begin{aosasect1}{ A Short History of Version Control}
+
+A pesar que este capítulo trata principalmente acerca de la arquitectura 
+de Mercurial, muchos de los conceptos son comunes con otros sistemas de 
+control de versiones. De manera de poder abordar Mercurial provechosamente, 
+me gustaría comenzar nombrando algunos de los conceptos y acciones de los distintos 
+sistemas de versionamiento. Para poner todo esto en perspectiva, presentaré también
+una pequeña historia del área.
+
+%While this chapter is primarily about Mercurial's software
+%architecture, many of the concepts are shared with other version
+%control systems. In order to fruitfully discuss Mercurial, I'd like to
+%start off by naming some of the concepts and actions in different
+%version control systems. To put all of this in perspective, I will
+%also provide a short history of the field.
+
+Los sistemas de versionamiento fueron inventados para ayudar a los desarrolladores
+a trabajar simultáneamente en proyectos de software, sin la necesidad de pasar
+una copia completa del proyecto a otro desarrollador o de tener que mantener un registro
+de los cambios de los archivos. Generalicemos la idea del código fuente de un proyecto a cualquier 
+jerarquía de archivos. Una de las funciones más básicas del control de versiones es la de
+comunicar los cambios del sistema de archivos. El ciclo básico es como sigue:
+ 
+%Version control systems were invented to help developers work on
+%software systems simultaneously, without passing around full copies
+%and keeping track of file changes themselves. Let's generalize from
+%software source code to any tree of files. One of the primary
+%functions of version control is to pass around changes to the
+%tree. The basic cycle is something like this:
+
+\begin{aosaenumerate}
+
+  \item Obtener la última copia del sistema de archivos de un tercero
+  %\item Get the latest tree of files from someone else
+
+  \item Trabajar en los cambios para dicha versión de los archivos
+  %\item Work on a set of changes to this version of the tree
+
+  \item Publicar los cambios de manera que otros puedan recibirlos
+  %\item Publish the changes so that others can retrieve them
+
+\end{aosaenumerate}
+
+\noindent
+La primera acción, la de obtener una copia local de los archivos, se llama 
+\emph{checkout}. El lugar desde el cual obtenemos y publicamos nuestros cambios
+se llama \emph{repositorio}, y el resultado de un checkout es llamado comúnmente
+\emph{copia local} (\emph{working directory}, \emph{working tree}, o \emph{working copy}).
+Actualizar la copia local con los últimos archivos del repositorio 
+se conoce como \emph{update}; esto a veces requiere que se haga una fusión (\emph{merge})
+de los cambios, es decir, combinar los cambios de distintos usuarios en un único archivo.
+Comandos como diff permiten comparar los cambios entre dos revisiones del sistema de archivos o
+de archivos, siendo el uso más común el de comparar los cambios locales (no aún publicados) con la última revisión.  
+Los cambios son publicados al ejecutar el comando \emph{commit}, el cual guardará los cambios
+de la copia local al repositorio.
+
+%The first action, to get a local tree of files, is called a
+%\emph{checkout}. The store where we retrieve and publish our changes
+%is called a \emph{repository}, while the result of the checkout is
+%called a \emph{working directory}, \emph{working tree}, or
+%\emph{working copy}. Updating a working copy with the latest files
+%from the repository is simply called \emph{update}; sometimes this
+%requires \emph{merging}, i.e., combining changes from different users
+%in a single file. A diff command allows us to review changes between
+%two revisions of a tree or file, where the most common mode is to
+%check the local (unpublished) changes in your working copy. Changes
+%are published by issuing a \emph{commit} command, which will save the
+%changes from the working directory to the repository.
+
+\begin{aosasect2}{Control de Versiones Centralizado}
+%\begin{aosasect2}{Centralized Version Control}
+
+El primer sistema de control de versiones fue el Sistema de Control de Código Fuente (SCCS por sus siglas en inglés),
+descrito por primera vez en 1975. Era principalmente una manera de guardar las diferencias entre versiones sucesivas de un archivo (deltas)
+que resultaba ser más eficiente que mantener las diferentes copias, pero no ayudaba a compartir estos cambios con otros.
+Fue seguido en 1982 por el Sistema de Control de Revisiones (RCS por sus siglas en inglés), que era una versión evolucionada y gratuita de SCCS.
+Este sistema aún es mantenido por el proyecto GNU.
+ 
+%The first version control system was the Source Code Control System,
+%SCCS, first described in 1975. It was mostly a way of saving deltas to
+%single files that was more efficient than just keeping around copies,
+%and didn't help with publishing these changes to others. It was
+%followed in 1982 by the Revision Control System, RCS, which was a more
+%evolved and free alternative to SCCS (and which is still being
+%maintained by the GNU project).
+
+Después de RCS vino CVS, el Sistema de Versionamiento Concurrente. CVS fue lanzado 
+por primera vez en 1986 y era un conjunto de scripts que manipulaban los archivos de
+revisiones de RCS en grupos. La gran innovación propuesta en CVS fue el hecho que múltiples
+usuarios pudieran editar simultáneamente las fuentes, combinando (merge) los cambios luego de esto.
+Esto introdujo también la noción de conflictos de edición. Los desarrolladores solo pueden hacer commit 
+de un archivo si este está basado en la última versión del repositorio. Si es que hay cambios entre la copia local,
+y la última versión es necesario resolver primero los conflictos, típicamente las ediciones que afectan las mismas líneas.   
+
+%After RCS came CVS, the Concurrent Versioning System, first released
+%in 1986 as a set of scripts to manipulate RCS revision files in
+%groups. The big innovation in CVS is the notion that multiple users can
+%edit simultaneously, with merges being done after the fact
+%(concurrent edits). This also required the notion of edit conflicts.
+%Developers may only commit a new version of some file if it's based
+%on the latest version available in the repository. If there are changes
+%in the repository and in my working directory, I have to resolve any
+%conflicts resulting from those changes (edits changing the same lines).
+
+CVS fue también pionero con la noción de \emph{ramas} (\emph{branches}), que permiten 
+a los desarrolladores trabajar en distintas versiones en paralelo, y en las \emph{etiquetas} (\emph{tags}), 
+que permiten nombrar una revisión específica facilitando una posterior referencia.
+En un principio los deltas se comunicaban a través de un sistema de archivos compartido, pero luego CVS 
+implementó una arquitectura de cliente-servidor para ser utilizado en redes grandes, tales como Internet. 
+
+%CVS also pioneered the notions of \emph{branches}, which allow
+%developers to work on different things in parallel, and \emph{tags},
+%which enable naming a consistent snapshot for easy reference. While
+%CVS deltas were initially communicated via the repository on a shared
+%filesystem, at some point CVS also implemented a client-server
+%architecture for use across large networks (such as the Internet).
+
+El 2000, tres desarrolladores se juntaron con el objetivo de construir un nuevo sistema de versionamiento, 
+con la intención de solucionar algunos de los grandes problemas de CVS. El proyecto fue bautizado como Subversion.
+Lo más importante es que Subversion trabaja con todo el sistema de archivos a la vez, lo cual significa que los 
+cambios a las revisiones deben ser atómicos, consistentes, aislados y durables. 
+Las copias locales de Subversion mantienen además una versión limpia de la última revisión obtenida (checkout), de 
+esta manera la operación de diff (comparar los cambios locales con la última revisión obtenida), es local y por ende rápida.  
+
+%In 2000, three developers got together to build a new VCS, christened
+%Subversion, with the intention of fixing some of the larger
+%warts in CVS\@. Most importantly, Subversion works on whole trees at a
+%time, meaning changes in a revisions should be atomic, consistent,
+%isolated, and durable. Subversion working copies also retain a
+%pristine version of the checked out revision in the working directory,
+%so that the common diff operation (comparing the local tree against
+%a checked-out changeset) is local and thus fast.
+
+Uno de los conceptos interesantes de Subversion es que las etiquetas y las ramas
+son parte del sistema de archivos del proyecto. Un proyecto en Subversion está dividido generalmente en tres: 
+\code{tags}, \code{branches} y \code{trunk}. Este diseño ha probado ser muy intuitivo para
+los usuarios que no estaban familiarizados con los sistemas de versionamiento. Sin embargo, la falta de flexibilidad, inherente a este diseño, 
+ha causado numerosos problemas a las herramientas de conversión, principalmente por el 
+hecho que \code{tags} y \code{branches} tiene más información estructural en otros sistemas.
+  
+%One of the interesting concepts in Subversion is that tags and
+%branches are part of a project tree. A Subversion project is usually
+%divided into three areas: \code{tags}, \code{branches}, and
+%\code{trunk}. This design has proved very intuitive to users who were
+%unfamiliar with version control systems, although the flexibility
+%inherent in this design has caused
+%numerous problems for conversion tools, mostly because \code{tags} and
+%\code{branches} have more structural representation in other systems.
+
+Todos los sistemas mencionados anteriormente son catalogados como \emph{centralizados}, 
+ya que dependen de otro computador para mantener la historia del repositorio y transmitir los cambios. 
+Los sistemas de versionamiento \emph{distribuidos}, en cambio, mantienen una copia de 
+todo o gran parte del repositorio en cada computador que tenga una copia local de dicho repositorio. 
+
+%All of the aforementioned systems are said to be \emph{centralized};
+%to the extent that they even know how to exchange changes (starting
+%with CVS), they rely on some other computer to keep track of the
+%history of the repository. \emph{Distributed} version control systems
+%instead keep a copy of all or most of the repository history on each
+%computer that has a working directory of that repository.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Control de Versiones Distribuido}
+%\begin{aosasect2}{Distributed Version Control}
+
+A pesar que Subversion es una clara mejora comparado con CVS, sigue teniendo algunas deficiencias.
+Por una parte, en todos los sistemas centralizados, hacer commit de los cambios y publicarlos es 
+en realidad lo mismo, ya que la historia del repositorio se encuentra centralizada en un sólo lugar.
+Esto hace que sin acceso de red sea imposible hacer commit. Segundo, el acceso al repositorio en los 
+sistemas centralizados requiere de al menos un round-trip en la red, lo que lo hace relativamente 
+lento comparado con los accesos locales que se requieren en un sistema distribuido. Tercero, los sistemas 
+presentados más arriba no eran muy buenos con los merges (algunos han mejorado desde entonces).
+En el caso de grupos grandes trabajando concurrentemente, es importante que el sistema de control de versiones
+mantenga un registro de que cambios fueron incluidos en que revisión, de manera que nada se pierda y los siguientes 
+merges puedan usar dicha información. Cuarto, la centralización requerida por los sistemas de versionamiento tradicionales a veces parece artificial
+ y promueve un único lugar para la integración. Los defensores de los sistemas de versionamiento distribuidos, 
+argumentan que un sistema más distribuido permite una organización más orgánica, donde los desarrolladores 
+pueden generar cambios e integrarlos en la medida que el proyecto lo requiera.  
+
+%While Subversion was a clear improvement over CVS, there are still a
+%number of shortcomings. For one thing, in all centralized systems,
+%committing a changeset and publishing it are effectively the same
+%thing, since repository history is centralized in one place. This
+%means that committing changes without network access is
+%impossible. Secondly, repository access in centralized systems always
+%needs one or more network round trips, making it relatively slow compared
+%to the local accesses needed with distributed systems. Third, the systems
+%discussed above were not very good at tracking merges (some have since
+%grown better at it). In large groups working concurrently, it's
+%important that the version control system records what changes have
+%been included in some new revision, so that nothing gets lost and
+%subsequent merges can make use of this information. Fourth, the
+%centralization required by traditional VCSes sometimes seems
+%artificial, and promotes a single place for integration. Advocates of
+%distributed VCSes argue that a more distributed system allows for a
+%more organic organization, where developers can push around and
+%integrate changes as the project requires at each point in time.
+
+Nuevas herramientas han sido desarrolladas para enfrentar estas necesidades.
+Desde yo provengo, el mundo open source, las tres más notables el 2011 son Git, 
+Mercurial y Bazaar. Tanto Git como Mercurial comenzaron el 2005 cuando los 
+desarrolladores del kernel de Linux decidieron no usar más el sistema propietario BitKeeper.
+Ambos sistemas fueron iniciados por desarrolladores del kernel de Linux, por Linus Torvalds y
+Matt Mackall respectivamente, para enfrentar la necesidad de un sistema de versionamiento
+capaz de manejar cientos de miles de cambios en decenas de miles de archivos (como por ejemplo el propio kernel).
+Tanto Matth como Linus estaban fuertemente influenciados por el sistema de versionamiento Monotone. 
+Bazaar fue desarrollado de manera separada, pero comenzó a ser usado masivamente aproximadamente al mismo tiempo, 
+cuando Canonical lo adoptó para usarlo en todos sus proyectos.  
+  
+%A number of new tools have been developed to address these needs. From
+%where I sit (the open source world), the most notable three of these
+%in 2011 are Git, Mercurial and Bazaar. Both Git and Mercurial were
+%started in 2005 when the Linux kernel developers decided to no longer
+%use the proprietary BitKeeper system. Both were started by Linux
+%kernel developers (Linus Torvalds and Matt Mackall, respectively) to
+%address the need for a version control system that could handle
+%hundreds of thousands of changesets in tens of thousands of files (for
+%example, the kernel). Both Matt and Linus were also heavily influenced
+%by the Monotone VCS\@. Bazaar was developed separately but gained
+%widespread usage around the same time, when it was adopted by
+%Canonical for use with all of their projects.
+
+Construir un sistema de versionamiento distribuido obviamente presenta algunos desafíos, 
+muchos de los cuales son inherentes a cualquier sistema distribuido.
+Por una parte, la vista canónica de la historia de un proyecto que proveen los servidores de control
+en los sistemas centralizados, no existe en los sistemas de versionamiento distribuidos.
+Los cambios pueden ser publicados en paralelo, haciendo imposible ordenar temporalmente las revisiones de un repositorio.   
+
+%Building a distributed version control system obviously comes with
+%some challenges, many of which are inherent in any distributed
+%system. For one thing, while the source control server in centralized
+%systems always provided a canonical view of history, there is no such
+%thing in a distributed VCS\@. Changesets can be committed in parallel,
+%making it impossible to temporally order revisions in any given
+%repository.
+
+
+La solución que ha sido adoptada casi universalmente es usar un grafo acíclico dirigido (DAG por sus siglas en inglés), 
+para ordenar los cambios en vez de ordenarlos linealmente (\aosafigref{fig.hg.dag}).
+Esto significa que, un nuevo conjunto de cambios publicados es la revisión hija de la revisión en que se basó y 
+ninguna revisión puede depender de ella misma o de sus descendientes.
+En este esquema tenemos tres tipos especiales de revisiones: \emph{root
+revisions} que no tienen padres (un repositorio puede tener más de un root), \emph{merge revisions} que tienen más de un padre, y
+\emph{head revisions} que no tienen hijos. Cada repositorio comienza de una root revision vacía y sigue desde ahí, a lo largo de 
+una serie de cambios, terminando en una o más head revisions. Cuando dos usuarios han hecho commit por separado, y uno de ellos quiere
+obtener los cambios del otro, el o ella tendrá que mezclar (merge) explícitamente los cambios del otro en una nueva revisión, a la que posteriormente 
+le hará commit como una merge revision.
+
+%The solution that has been almost universally adopted is to use a
+%directed acyclic graph (DAG) of changesets instead of a linear
+%ordering (\aosafigref{fig.hg.dag}). That is, a newly committed
+%changeset is the child revision of the revision it was based on, and
+%no revision can depend on itself or its descendant revisions. In this
+%scheme, we have three special types of revisions: \emph{root
+%revisions} which have no parents (a repository can have multiple
+%roots), \emph{merge revisions} which have more than one parent, and
+%\emph{head revisions} which have no children. Each repository starts
+%from an empty root revision and proceeds from there along a line of
+%changesets, ending up in one or more heads. When two users have
+%committed independently and one of them wants to pull in the changes
+%from the other, he or she will have to explicitly merge the other's
+%changes into a new revision, which he subsequently commits as a merge
+%revision.
+
+\aosafigure[275pt]{../images/mercurial/dag.eps}{Grafo Acíclico Dirigido (DAG) de las Revisiones}{fig.hg.dag}
+
+Note que el modelo de DAG ayuda a solucionar algunos de lo problemas que son difíciles de solucionar en 
+sistemas de versionamiento centralizados: las merge revisions son usadas para registrar información acerca de una nueva combinación de ramas del DAG.
+El grafo resultante puede también representar un gran grupo de branches paralelas, que después se mezclan en grupos más pequeños, y que finalmente
+se combinan en una branch especial que es considerada la canónica. 
+%Note that the DAG model helps solve some of the problems that are hard
+%to solve in centralized version control systems: merge revisions are used to
+%record information about newly merged branches of the DAG. The
+%resulting graph can also usefully represent a large group of parallel
+%branches, merging into smaller groups, finally merging into one
+%special branch that's considered canonical.
+
+Este enfoque requiere que el sistema mantenga registro de las relaciones entre los cambios; 
+para facilitar el intercambio de datos de los cambios, se hace que los cambios sepan sus padres.
+Para lograr esto, los cambios requieren obviamente algún tipo de identificador único.
+Algunos sistemas usan un UUID o esquemas similares, en tanto que Git y Mercurial optaron por usar el SHA1
+del contenido de los cambios. Este esquema tiene la propiedad adicional que el ID puede ser usado para verificar el contenido de los cambios.
+Es más, dado que los padres están incluidos en los datos hasheados, toda la historia que lleva a cualquier revisión puede ser verificada usando su hash. 
+Los nombres de los autores, los mensajes de commit, las fechas y horas y cualquier otra 
+metadata de los cambios es hasheada al igual que cualquier otro archivo de una revisión, por lo que también pueden ser verificados.
+Y dado que la fecha y hora son registrados al momento del commit, tampoco avanzan linealmente en cualquier repositorio.
+  
+%This approach requires that the system keep track of the ancestry
+%relations between changesets; to facilitate exchange of changeset data,
+%this is usually done by having changesets keep track of their
+%parents. To do this, changesets obviously also need some kind of
+%identifier. While some systems use a UUID or a similar kind of scheme,
+%both Git and Mercurial have opted to use SHA1 hashes of the contents
+%of the changesets. This has the additional useful property that the
+%changeset ID can be used to verify the changeset contents. In fact,
+%because the parents are included in the hashed data, all history
+%leading up to any revision can be verified using its hash. Author
+%names, commit messages, timestamps and other changeset metadata is
+%hashed just like the actual file contents of a new revision, so that
+%they can also be verified. And since timestamps are recorded at commit
+%time, they too do not necessarily progress linearly in any given
+%repository.
+
+Acostumbrarse a todo esto puede ser difícil para la gente que anteriormente solo había utilizado
+sistemas de versionamiento centralizados: no hay un entero que identifique globalmente a una revisión, 
+solo un string hexadecimal de 40 caracteres. Además, ya no hay un ordenamiento global, solo uno local;
+el único ``ordenamiento'' global es un DAG en vez de una línea. Comenzar una nueva head de desarrollo 
+al hacer commit contra un padre que ya tenía hijos con cambios puede ser confuso cuando uno está acostumbrado 
+a las alertas de los sistemas de versionamiento para estos casos.
+
+%All of this can be hard for people who have previously only used
+%centralized VCSes to get used to: there is no nice integer to globally
+%name a revision, just a 40-character hexadecimal string. Moreover,
+%there's no longer any global ordering, just a local ordering; the only
+%global ``ordering'' is a DAG instead of a line. Accidentally starting
+%a new head of development by committing against a parent revision that
+%already had another child changeset can be confusing when you're used
+%to a warning from the VCS when this kind of thing happens.
+
+Afortunadamente existen herramientas que ayudan a visualizar el árbol de las revisiones y Mercurial además
+entrega una versión corta y no ambigua del hash de los cambios \emph{y} 
+y un número lineal, en el caso local, para facilitar la identificación. 
+Este último número es un entero que indica el orden en que los cambios ingresaron a la copia local.
+Dado que este número puede ser diferente entre copia y copia, no se puede confiar en él para operaciones no locales.
+
+%Luckily, there are tools to help visualize the tree ordering, and
+%Mercurial provides an unambiguous short version of the changeset hash
+%\emph{and} a local-only linear number to aid identification. The
+%latter is a monotonically climbing integer that indicates the order in
+%which changesets have entered the clone. Since this order can be
+%different from clone to clone, it cannot be relied on for non-local
+%operations.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Estructuras de Datos}
+%\begin{aosasect1}{Data Structures}
+
+Ahora que el concepto de DAG está más o menos claro, tratemos de ver como los DAGs
+se almacenan en Mercurial. El modelo del DAG es central en el funcionamiento interno de Mercurial, 
+y nosotros en realidad usamos varios DAGs diferentes en el almacenamiento del repositorio en disco 
+(así como también para la estructura del código en memoria). 
+Esta sección explica qué son y cómo ellos funcionan juntos.
+
+%Now that the concept of a DAG should be somewhat clear, let's try
+%and see how DAGs are stored in Mercurial. The DAG model is central to
+%the inner workings of Mercurial, and we actually use several different
+%DAGs in the repository storage on disk (as well as the in-memory
+%structure of the code). This section explains what they are and how
+%they fit together.
+
+\begin{aosasect2}{Desafíos}
+%\begin{aosasect2}{Challenges}
+
+Antes de adentrarnos en las estructuras de datos, me gustaría explicar un poco 
+el contexto en el cual Mecurial evolucionó. La primera referencia a Mecurial se encuentra
+en un email que Matt Mackall envió a la lista de correo del Kernel de Linux el 20 de abril del 2005.
+Esto ocurrió poco después que se decidiera que BitKeeper ya no se podía usar en el desarrollo del Kernel.
+Matt comenzó su email listando algunos objetivos: simplicidad, escalabilidad y eficiencia.
+
+%Before we dive into actual data structures, I'd like to provide some
+%context about the environment in which Mercurial evolved. The first
+%notion of Mercurial can be found in an email Matt Mackall sent to the
+%Linux Kernel Mailing List on April 20, 2005. This happened shortly
+%after it was decided that BitKeeper could no longer be used for the
+%development of the kernel. Matt started his mail by outlining some
+%goals: to be simple, scalable, and efficient.
+
+En~\cite{bib:mackall:better}, Matt sugiere que un sistema de versionamiento moderno debe soportar 
+árboles que contengan millones de archivos, manejar millones de cambios y escalar para varios miles de usuarios
+que estarán creando cambios en paralelo durante décadas. Habiendo fijado los objetivos, el revisa los factores tecnológicos limitantes:
+
+%In~\cite{bib:mackall:better}, Matt claimed that a modern VCS must deal
+%with trees containing millions of files, handle millions of
+%changesets, and scale across many thousands of users creating new
+%revisions in parallel over a span of decades. Having set the goals,
+%he reviewed the limiting technology factors:
+
+\begin{aosaitemize}
+  \item velocidad: CPU
+  %\item speed: CPU
+
+  \item capacidad: disco y memoria
+  %\item capacity: disk and memory
+
+  \item ancho de banda: memoria, LAN, disco, y WAN
+  %\item bandwidth: memory, LAN, disk, and WAN
+
+  \item tasa de búsqueda de disco (seek rate)
+  %\item disk seek rate
+
+\end{aosaitemize}
+
+La tasa de búsqueda del disco y el ancho de banda en WANs son las limitantes hoy en día, por lo que 
+se debiese optimizar para ellos. La publicación revisa los escenarios más comunes y los criterios para 
+evaluar el rendimiento del sistema desde el punto de vista de archivos:
+
+%Disk seek rate and WAN bandwidth are the limiting factors today, and
+%should thus be optimized for. The paper goes on to review common
+%scenarios or criteria for evaluating the performance of such a system
+%at the file level:
+
+\begin{aosaitemize}
+
+  \item Compresión para almacenamiento: ¿qué tipo de compresión es la más adecuada
+  para almacenar la historia de un archivo en disco? En la práctica, ¿qué algoritmo
+  explota más el rendimiento de I/O (entrada/salida) a la vez que previene que el tiempo de CPU sea 
+  un cuello de botella? 
+  %\item Storage compression: what kind of compression is best suited
+  %to save the file history on disk? Effectively, what algorithm makes
+  %the most out of the I/O performance while preventing CPU time
+  %from becoming a bottleneck?
+
+  \item Recuperar revisiones de archivos arbitrarias: varios sistemas de versionamiento almacenan las revisiones de manera tal que 
+  un gran número de revisiones anteriores tiene que ser leídas para poder reconstruir la más nueva (usando deltas).
+  Queremos controlar esto de manera de asegurarnos que recuperar revisiones antiguas siga siendo rápido.
+  %\item Retrieving arbitrary file revisions: a number of version control
+  %systems will store a given revision in such a way that a large
+  %number of older revisions must be read to reconstruct the newer one
+  %(using deltas). We want to control this to make sure that retrieving
+  %old revisions is still fast.
+
+  \item Agregar revisiones de archivos: regularmente añadimos nuevas revisiones. No queremos
+  reescribir las viejas revisiones cada vez que agregamos una nueva, ya que esto lo haría demasiado lento 
+  en caso de tener muchas revisiones.
+  %\item Adding file revisions: we regularly add new revisions. We don't
+  %want to rewrite old revisions every time we add a new one, because
+  %that would become too slow when there are many revisions.
+
+  \item Mostrar la historia de un archivo: queremos ser capaces de revisar la historia de todos los cambios que
+  afectaron a cierto archivo. Esto nos permite también anotar el código (que se solía llamar \code{blame} (culpar) en CVS, 
+  pero que fue renombrado como \code{annotate} (anotar) en algunos sistemas posteriores para remover la connotación negativa):
+  indicando la revisión de origen para cada línea de un archivo. 
+  %\item Showing file history: we want to be able to review a history of
+  %all changesets that touched a certain file. This also allows us to
+  %do annotations (which used to be called \code{blame} in CVS but was
+  %renamed to \code{annotate} in some later systems to remove the
+  %negative connotation): reviewing the originating changeset for each
+  %line currently in a file.
+
+\end{aosaitemize}
+
+La publicación continúa revisando escenarios similares a nivel de proyecto.
+Operaciones básicas en este nivel son recuperar una revisión, hacer commit de una nueva revisión 
+y encontrar las diferencias existentes en la copia local. Esta última, en particular, puede ser lenta para 
+árboles grandes, como por ejemplo los de los proyectos de Mozilla o NetBeans. Ambos proyectos usan Mercurial.
+ 
+%The paper goes on to review similar scenarios at the project level.
+%Basic operations at this level are checking out a revision, committing
+%a new revision, and finding differences in the working directory. The
+%latter, in particular, can be slow for large trees (like those of the
+%Mozilla or NetBeans projects, both of which use Mercurial for their
+%version control needs).
+
+\end{aosasect2}
+
+\begin{aosasect2}{Almacenamiento Rápido de Revisiones: Revlogs}
+%\begin{aosasect2}{Fast Revision Storage: Revlogs}
+
+La solución que se le ocurrió a Matt para Mercurial es llamada \emph{revlog} (la versión corta de ``revision log'' (log de revisión)).
+El revlog es una manera eficiente de almacenar las revisiones de un archivo (cada una con cierta cantidad de cambios respecto a la versión anterior).
+Necesita ser eficiente tanto en tiempos de acceso (por lo que se optimizan las búsquedas (seeks) de disco) como en espacio de almacenamiento, en base a los
+escenarios explicados en la sección anterior. Para lograr esto, un revlog se representa realmente como dos archivos en disco: un índice y el archivo de datos.
+
+%The solution Matt came up with for Mercurial is called the \emph{revlog}
+%(short for revision log). The revlog is a way of efficiently storing
+%revisions of file contents (each with some amount of changes compared
+%to the previous version). It needs to be efficient in both access time
+%(thus optimizing for disk seeks) and storage space, guided by the common
+%scenarios outlined in the previous section. To do this, a revlog is
+%really two files on disk: an index and the data file.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{|rl|}
+    \hline
+    6 bytes & hunk offset \\
+    2 bytes & flags \\
+    4 bytes & hunk length \\
+    4 bytes & uncompressed length \\
+    4 bytes & base revision \\
+    4 bytes & link revision \\
+    4 bytes & parent 1 revision \\
+    4 bytes & parent 2 revision \\
+    32 bytes & hash \\
+    \hline
+  \end{tabular}
+  \caption{Formato de los Records de Mercurial}
+  \label{tbl.hg.records}
+\end{table}
+
+El índice consiste de records de largo fijo, cuyos contenidos se detallan en \aosatblref{tbl.hg.records}.
+Tener records de largo fijo es útil, ya que esto significa que tener el número local de la revisión permite 
+acceso directo (i.e., tiempo-constante) a la revisión: podemos simplemente leer a partir de la posición (largo-del-índice~$\times$~revisión), para encontrar los datos. 
+Separar el índice de los datos también significa que podemos leer el índice rápidamente sin necesidad de buscar (seek) en el disco por todos los datos del.
+
+%The index consists of fixed-length records, whose contents are
+%detailed in \aosatblref{tbl.hg.records}. Having fixed-length records
+%is nice, because it means that having the local revision number allows
+%direct (i.e., constant-time) access to the revision: we can simply
+%read to the position (index-length~$\times$~revision) in the index
+%file, to locate the data. Separating the index from the data also
+%means we can quickly read the index data without having to seek the
+%disk through all the file data.
+
+Los valores hunk offset y hunk length especifican cual pedazo del archivo de datos leer
+para obtener los datos comprimidos de una revisión. Para obtener la revisión original 
+hay que comenzar leyendo la revisión base y aplicar deltas hasta la revisión actual.
+El truco es decidir cuando se almacena una nueva revisión base. Esta decisión se basa 
+en el tamaño acumulado de los deltas comparado con el largo no comprimido de la revisión 
+(los datos se comprimen usando zlib para usar aún menos espacio en disco). Al limitar el largo 
+de la cadena de deltas de esta manera nos aseguramos que la reconstrucción de los datos para una 
+revisión dada no requiera leer ni aplicar muchos deltas.
+
+%The hunk offset and hunk length specify a chunk of the data file to
+%read in order to get the compressed data for that revision. To get the
+%original data we have to start by reading the base revision, and apply
+%deltas through to this revision. The trick here is the decision on
+%when to store a new base revision. This decision is based on the
+%cumulative size of the deltas compared to the uncompressed length of
+%the revision (data is compressed using zlib to use even less space on
+%disk). By limiting the length of the delta chain in this way, we make
+%sure that reconstruction of the data in a given revision does not
+%require reading and applying lots of deltas.
+
+
+Revisiones tipo link se usan para que revlogs dependientes apunten al revlog del nivel más superior
+(hablaremos más de esto en breve), y las revisiones padre se almacenan usando el número local de la revisión. 
+Nuevamente, esto hace que sea fácil leer sus datos en el revlog relevante.
+El hash se usa para guardar el identificador único de esta revisión.
+Tenemos 32 bytes en vez de los 20 requeridos por SHA1, para soportar futuras expansiones.
+
+%Link revisions are used to have dependent revlogs point back to the
+%highest-level revlog (we'll talk more about this in a little bit), and
+%the parent revisions are stored using the local integer revision
+%number. Again, this makes it easy to look up their data in the
+%relevant revlog. The hash is used to save the unique identifier for
+%this changeset. We have 32 bytes instead of the 20 bytes required for
+%SHA1 in order to allow future expansion.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Los Tres Revlogs}
+%\begin{aosasect2}{The Three Revlogs}
+
+Dado que el revlog provee una estructura genérica para los datos históricos, 
+podemos representar nuestro modelo de datos para nuestro árbol de archivos usando dicho concepto.
+Esta representaci'on consiste de tres tipos de revlogs: \emph{changelog}, \emph{manifests}, y
+\emph{filelogs}. El changelog contiene metadata para cada revisión, con un puntero al revlog manifest 
+(esto es, un id de nodo para una revisión en el revlog de manifest). El manifest es un archivo que tiene una lista de nombres de archivos además del id 
+del nodo para cada uno, apuntando a una revisión en el filelog del archivo.
+En el código tenemos clases para changelog, manifest, y filelog que son subclases de la clase genérica revlog, 
+proveyendo así una clara anidación de ambos conceptos.
+
+%With the revlog providing a generic structure for historic data, we
+%can layer the data model for our file tree on top of that. It consists
+%of three types of revlogs: the \emph{changelog}, \emph{manifests}, and
+%\emph{filelogs}. The changelog contains metadata for each revision,
+%with a pointer into the manifest revlog (that is, a node id for one
+%revision in the manifest revlog). In turn, the manifest is a file that
+%has a list of filenames plus the node id for each file, pointing to a
+%revision in that file's filelog. In the code, we have classes for
+%changelog, manifest, and filelog that are subclasses of the generic
+%revlog class, providing a clean layering of both concepts.
+
+\aosafigure[275pt]{../images/mercurial/revlogs.eps}{Estructura de Logs}{fig.hg.revlog}
+%\aosafigure[275pt]{../images/mercurial/revlogs.eps}{Log Structure}{fig.hg.revlog}
+
+Una revisión de cambio de logs (changelog revision) luce como:
+%A changelog revision looks like this:
+
+\begin{verbatim}
+0a773e3480fe58d62dcc67bd9f7380d6403e26fa
+Dirkjan Ochtman <dirkjan@ochtman.nl>
+1276097267 -7200
+mercurial/discovery.py
+discovery: fix description line
+\end{verbatim}
+
+\noindent Este es el valor que uno obtiene de la capa de revlog; la capa de changelog
+se convierte así en una simple lista de valores. La primera línea entrega el hash del manifest, 
+luego viene el nombre del autor, la fecha y la hora (en forma de un timestamp Unix y un offset de zona horaria),
+una lista de los archivos afectados y el mensaje descriptivo. Una cosa está oculta: permitimos cualquier metadata en el changelog, 
+y para seguir soportando versiones anteriores esos bits van después del timestamp. 
+
+%\noindent This is the value you get from the revlog layer; the changelog layer
+%turns it into a simple list of values. The initial line provides the
+%manifest hash, then we get author name, date and time (in the form of
+%a Unix timestamp and a timezone offset), a list of affected files, and
+%the description message. One thing is hidden here: we allow arbitrary
+%metadata in the changelog, and to stay backwards compatible we added
+%those bits to go after the timestamp.
+
+Luego viene el manifest:
+%Next comes the manifest:
+
+\begin{verbatim}
+.hgignore\x006d2dc16e96ab48b2fcca44f7e9f4b8c3289cb701
+.hgsigs\x00de81f258b33189c609d299fd605e6c72182d7359
+.hgtags\x00b174a4a4813ddd89c1d2f88878e05acc58263efa
+CONTRIBUTORS\x007c8afb9501740a450c549b4b1f002c803c45193a
+COPYING\x005ac863e17c7035f1d11828d848fb2ca450d89794
+...
+\end{verbatim}
+
+%FIXME
+\noindent Esta es la revisión manifest a la que el cambio 0a773e apunta 
+(la interfaz gráfica de Mercurial permita acortar los identificadores a cualquier prefijo que no produzca ambigüedad). 
+Es una simple lista de todos los archivos en el proyecto, uno por línea, donde el nombre de archivo está seguido por un byte NULL (\texttt{\\0} en C), 
+seguido del id del nodo codificado en hexadecimal, apuntando al filelog. Los directorios no son almacenados separadamente, sino que se infieren a partir de las barras (\texttt{/}) 
+en las rutas de los archivos.
+El manifest se representa típicamente como una estructura similar a una tabla de hash en el código Python de Mercurial, con
+los nombres de archivos como llaves y los nodos como valores.
+
+%\noindent This is the manifest revision that changeset 0a773e points to
+%(Mercurial's UI allows us to shorten the identifier to any unambiguous
+%prefix). It is a simple list of all files in the tree, one per line,
+%where the filename is followed by a NULL byte, followed by the
+%hex-encoded node id that points into the file's filelog. Directories
+%in the tree are not represented separately, but simply inferred from
+%including slashes in the file paths. Remember that the manifest is
+%diffed in storage just like every revlog, so this structure should
+%make it easy for the revlog layer to store only changed files and
+%their new hashes in any given revision. The manifest is usually
+%represented as a hashtable-like structure in Mercurial's Python code,
+%with filenames as keys and nodes as values.
+
+El tercer tipo de revlog es el filelog. Estos se almacenan en el directorio de almacenamiento interno (\code{store} directory) de Mercurial, donde son nombrados
+casi exactamente como los archivos que están siendo traqueados.
+Los nombres se codifican un poco para asegurar que las cosas funcionen en los principales sistemas operativos.
+Por ejemplo, tenemos que lidiar con sistemas de archivos con casefolding (no sensitivos a mayúsculas y minúsculas) en Windows y Mac~OS~X, nombres de archivos deshabilitados específicos en Windows, y distintas
+codificaciones de caracteres usadas por los distintos sistemas de archivos. Como pueden imaginar, hacer esto
+de manera confiable para todos los sistemas operativos puede ser muy difícil. El contenido de una revisión de filelog, en cambio, no es tan interesante:
+solo el contenido del archivo, además de cierto prefijo de metadata opcional (el cual se usa para seguir copias y renombres de archivos, entre otras cosas menores). 
+
+%The third type of revlog is the filelog. Filelogs are stored in Mercurial's internal \code{store} directory,
+%where they're named almost exactly like the file they're tracking. The
+%names are encoded a little bit to make sure things work across all
+%major operating systems. For example, we have to deal with casefolding
+%filesystems on Windows and Mac~OS~X, specific disallowed filenames on
+%Windows, and different character encodings as used by the various
+%filesystems. As you can imagine, doing this reliably across operating
+%systems can be fairly painful. The contents of a filelog revision, on
+%the other hand, aren't nearly as interesting: just the file contents,
+%except with some optional metadata prefix (which we use for tracking
+%file copies and renames, among other minor things).
+
+Este modelo de datos nos permite acceso total a la bodega de datos en un 
+repositorio de Mercurial, pero no siempre es tan conveniente. A pesar que el 
+modelo actual está orientado verticalmente (un filelof por archivo), los 
+desarrolladores de Mercurial a menudo se encontraron en la situaci'on en la que 
+querían manejar todos los detalles de una revisión. Desde que changeset de un 
+changelog comienzan y fácil acceso al manifest y filelogs de esa revisión.  
+Inventaron para esto otro conjunto de clases, llamadas \code{contextos} 
+(\code{contexts}), que están basadas nuevamente en los revlogs.
+
+%This data model gives us complete access to the data store in a
+%Mercurial repository, but it's not always very convenient. While the
+%actual underlying model is vertically oriented (one filelog per file),
+%Mercurial developers often found themselves wanting to deal with all
+%details from a single revision, where they start from a changeset from
+%the changelog and want easy access to the manifest and filelogs from
+%that revision.  They later invented another set of classes, layered
+%cleanly on top of the revlogs, which do exactly that. These are
+%called \code{contexts}.
+
+One nice thing about the way the separate revlogs are set up is the
+ordering. By ordering appends so that filelogs get appended to first,
+then the manifest, and finally the changelog, the repository is always
+in a consistent state. Any process that starts reading the changelog
+can be sure all pointers into the other revlogs are valid, which takes
+care of a number of issues in this department. Nevertheless, Mercurial
+also has some explicit locks to make sure there are no two processes
+appending to the revlogs in parallel.
+
+\end{aosasect2}
+
+\begin{aosasect2}{El Directorio de Trabajo}
+%\begin{aosasect2}{The Working Directory}
+
+A final important data structure is what we call the
+\emph{dirstate}. The dirstate is a representation of what's in the
+working directory at any given point. Most importantly, it keeps track
+of what revision has been checked out: this is the baseline for all
+comparisons from the \code{status} or \code{diff} commands, and also
+determines the parent(s) for the next changeset to be committed. The
+dirstate will have two parents set whenever the \code{merge} command
+has been issued, trying to merge one set of changes into the other.
+
+Because \code{status} and \code{diff} are very common operations (they
+help you check the progress of what you've currently got against the
+last changeset), the dirstate also contains a cache of the state of
+the working directory the last time it was traversed by Mercurial.
+Keeping track of last modified timestamps and file sizes makes it
+possible to speed up tree traversal. We also need to keep track of the
+state of the file: whether it's been added, removed, or merged in the
+working directory. This will again help speed up traversing the
+working directory, and makes it easy to get this information at commit
+time.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Versioning Mechanics}
+
+Now that you are familiar with the underlying data model and the
+structure of the code at the lower levels of Mercurial, let's move up
+a little bit and consider how Mercurial implements version control
+concepts on top of the foundation described in the previous section.
+
+\begin{aosasect2}{Branches}
+
+Branches are commonly used to separate different lines of development
+that will be integrated later. This might be because someone is
+experimenting with a new approach, just to be able to always keep the
+main line of development in a shippable state (feature branches), or
+to be able to quickly release fixes for an old release (maintenance
+branches). Both approaches are commonly used, and are supported by all
+modern version control systems. While implicit branches are common in
+DAG-based version control named branches (where the branch name is
+saved in the changeset metadata) are not as common.
+
+Originally, Mercurial had no way to explicitly name branches. Branches
+were instead handled by making different clones and publishing them
+separately. This is effective, easy to understand, and especially
+useful for feature branches, because there is little
+overhead. However, in large projects, clones can still be quite
+expensive: while the repository store will be hardlinked on most
+filesystems, creating a separate working tree is slow and may require
+a lot of disk space.
+
+Because of these downsides, Mercurial added a second way to do
+branches: including a branch name in the changeset metadata. A
+\code{branch} command was added that can set the branch name for the
+current working directory, such that that branch name will be used for
+the next commit. The normal \code{update} command can be used to
+update to a branch name, and a changeset committed on a branch will
+always be related to that branch. This approach is called \emph{named
+branches}. However, it took a few more Mercurial releases before
+Mercurial started including a way to close these branches up
+again (closing a branch will hide the branch from view in a list of
+branches). Branch closing is implemented by adding an extra field in the changeset
+metadata, stating that this changeset closes the branch. If the branch
+has more than one head, all of them have to be closed before the
+branch disappears from the list of branches in the repository.
+
+Of course, there's more than one way to do it.
+Git has a different way of naming branches, using
+references. References are names pointing to another object in the
+Git history, usually a changeset. This means that Git's branches are
+ephemeral: once you remove the reference, there is no trace of the
+branch ever having existed, similar to what you would get when using a
+separate Mercurial clone and merging it back into another clone. This
+makes it very easy and lightweight to manipulate branches locally, and
+prevents cluttering of the list of branches.
+
+This way of branching turned out to be very popular, much more popular
+than either named branches or branch clones in Mercurial. This has
+resulted in the \code{bookmarks}q extension, which will probably be
+folded into Mercurial in the future. It uses a simple unversioned file
+to keep track of references. The wire protocol used to exchange
+Mercurial data has been extended to enable communicating about
+bookmarks, making it possible to push them around.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Tags}
+
+At first sight, the way Mercurial implements tags can be a bit
+confusing. The first time you add a tag (using the \code{tag}
+command), a file called \code{.hgtags} gets added to the repository and
+committed. Each line in that file will contain a changeset node id and
+the tag name for that changeset node. Thus, the tags file is treated
+the same way as any other file in the repository.
+
+There are three important reasons for this. First, it must be possible
+to change tags; mistakes do happen, and it should be possible to fix
+them or delete the mistake. Second, tags should be part of changeset
+history: it's valuable to see when a tag was made, by whom, and for
+what reason, or even if a tag was changed. Third, it should be
+possible to tag a changeset retroactively. For example, some projects
+extensively test drive a release artifact exported from the version
+control system before releasing it.
+
+These properties all fall easily out of the \code{.hgtags} design. While some
+users are confused by the presence of the \code{.hgtags} file in their
+working directories, it makes integration of the tagging mechanism
+with other parts of Mercurial (for example, synchronization with other
+repository clones) very simple. If tags existed outside the source
+tree (as they do in Git, for example), separate mechanisms would have
+to exist to audit the origin of tags and to deal with conflicts from
+(parallel) duplicate tags. Even if the latter is rare, it's nice to
+have a design where these things are not even an issue.
+
+To get all of this right, Mercurial only ever appends new lines to the
+\code{.hgtags} file. This also facilitates merging the file if the
+tags were created in parallel in different clones. The newest node id
+for any given tag always takes precedence, and adding the null node id
+(representing the empty root revision all repositories have in common)
+will have the effect of deleting the tag. Mercurial will also consider
+tags from all branches in the repository, using recency calculations
+to determine precedence among them.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Estructura Genera}
+%\begin{aosasect1}{General Structure}
+
+Mercurial está escrito casi en su mayoría en Python, con sólo algunas partes y 
+piezas en C, dado que éstas son críticas para el rendimiento de toda la 
+aplicación. Se consideró que Python era la alternativa más apropiada para la 
+mayor parte del código, ya que es mucho más fácil expresar conceptos de alto 
+nivel en un lenguage dinámico como Python. Dado que gran parte del código no es 
+realmente crítico para el rendimiento, no nos importa sacrificar eficiencia si 
+esto nos facilita la programación en casi todas las partes.
+
+%Mercurial is almost completely written in Python, with only a few bits
+%and pieces in C because they are critical to the performance of the
+%whole application. Python was deemed a more suitable choice for most
+%of the code because it is much easier to express high-level concepts
+%in a dynamic language like Python. Since much of the code is not
+%really critical to performance, we don't mind taking the hit in
+%exchange for making the coding easier for ourselves in most parts.
+
+Un módulo en Python corresponde a un único archivo de código. Los módulos pueden 
+contener tanto código como sea necesario, siendo así una forma importante de 
+organizar el código. Los módulos pueden usar tipos o llamar funciones de otros 
+módulos al importar éstos explicítamente. Un directorio que contenga un módulo
+\code{\_\_init\_\_.py} es llamado un paquete, y expondrá todos los módulos y 
+paquetes al importer de Python.
+
+%A Python module corresponds to a single file of code. Modules can
+%contain as much code as needed, and are thus an important way to
+%organize code. Modules may use types or call functions from other
+%modules by explicitly importing the other modules. A directory
+%containing an \code{\_\_init\_\_.py} module is said to be a package,
+%and will expose all contained modules and packages to the Python
+%importer.
+
+La configuración base de Mercurial instala dos paquetes en el path de Python:
+\code{mercurial} y \code{hgext}. El paquete \code{mercurial} contiene el código 
+base requerido para ejecutar Mercurial, mientras que \code{hgext} contiene 
+algunas extensiones que fueron consideradas lo suficientemente útiles para ser 
+distribuidas junto con el código base. Sin embargo, ellas deben ser habilitadas
+manualmente en un archivo de configuración (el cual discutiremos posteriormente).
+
+%Mercurial by default installs two packages into the Python path:
+%\code{mercurial} and \code{hgext}. The \code{mercurial} package
+%contains the core code required to run Mercurial, while \code{hgext}
+%contains a number of extensions that were deemed useful enough to be
+%delivered alongside the core. However, they must still be enabled by
+%hand in a configuration file if desired (which we will discuss later.)
+
+Para ser claros, Mercurial es un aplicación de línea de comandos. Esto significa
+que tenemos una interfaz sencilla: el usuario llama el script \code{hg} con un 
+comando. Este comando (como \code{log}, \code{diff} o \code{commit}) puede 
+recibir ciertas opciones y argumentos: existen algunas opciones que son válidas 
+para todos los comandos. Luego, le pueden ocurrir una de tres cosas a la interfaz.
+
+%To be clear, Mercurial is a command-line application. This means that
+%we have a simple interface: the user calls the \code{hg} script with a
+%command. This command (like \code{log}, \code{diff} or \code{commit})
+%may take a number of options and arguments; there are also some
+%options that are valid for all commands. Next, there are three
+%different things that can happen to the interface.
+
+\begin{aosaitemize}
+
+  \item \code{hg} a menudo imprimirá algo que el usuario pidió o mostrará mensajes
+  respecto al estatus
+
+%  \item \code{hg} will often output something the user asked for or show
+%  status messages
+
+  \item \code{hg} puede solicitar información adicional a través de mensajes por
+  la línea de comandos
+
+%  \item \code{hg} can ask for further input through command-line prompts
+
+  \item \code{hg} puede lanzar un programa externo, como por ejemplo un editor
+  para ingresar el mensaje del commit, o un programa para facilitar el merge de
+  conflictos en el código  
+
+%  \item \code{hg} may launch an external program (such as an editor for the
+%  commit message or a program to help merging code conflicts)
+
+\end{aosaitemize}
+
+\aosafigure{../images/mercurial/modules.eps}{Import Graph}{fig.hg.importgraph}
+
+The start of this process can neatly be observed from the import graph
+in \aosafigref{fig.hg.importgraph}. All command-line arguments are
+passed to a function in the dispatch module. The first thing that
+happens is that a \code{ui} object is instantiated. The \code{ui}
+class will first try to find configuration files in a number of
+well-known places (such as your home directory), and save the
+configuration options in the \code{ui} object. The configuration files
+may also contain paths to extensions, which must also be loaded at
+this point. Any global options passed on the command-line are also
+saved to the \code{ui} object at this point.
+
+After this is done, we have to decide whether to create a repository
+object. While most commands require a local repository (represented
+by the \code{localrepo} class from the \code{localrepo} module), some
+commands may work on remote repositories (either HTTP, SSH, or some
+other registered form), while some commands can do their work without
+referring to any repository. The latter category includes the
+\code{init} command, for example, which is used to initialize a new
+repository.
+
+All core commands are represented by a single function in the
+\code{commands} module; this makes it really easy to find the code for
+any given command. The commands module also contains a hashtable that
+maps the command name to the function and describes the options that
+it takes. The way this is done also allows for sharing common sets of
+options (for example, many commands have options that look like the
+ones the \code{log} command uses). The options description allows the
+dispatch module to check the given options for any command, and to
+convert any values passed in to the type expected by the command
+function. Almost every function also gets the \code{ui} object and the
+\code{repository} object to work with.
+
+\end{aosasect1}
+
+\begin{aosasect1}{Extensibility}
+
+One of the things that makes Mercurial powerful is the ability to
+write extensions for it. Since Python is a relatively easy language to
+get started with, and Mercurial's API is mostly quite well-designed
+(although certainly under-documented in places), a number of people
+actually first learned Python because they wanted to extend Mercurial.
+
+\begin{aosasect2}{Writing Extensions}
+
+Extensions must be enabled by adding a line to one of the
+configuration files read by Mercurial on startup; a key is provided
+along with the path to any Python module. There are several ways to
+add functionality:
+
+\begin{aosaitemize}
+
+  \item adding new commands;
+
+  \item wrapping existing commands;
+
+  \item wrapping the repository used;
+
+  \item wrap any function in Mercurial; and
+
+  \item add new repository types.
+
+\end{aosaitemize}
+
+Adding new commands can be done simply by adding a hashtable called
+\code{cmdtable} to the extension module. This will get picked up by
+the extension loader, which will add it to the commands table
+considered when a command is dispatched. Similarly, extensions can
+define functions called \code{uisetup} and \code{reposetup} which are
+called by the dispatching code after the UI and repository have been
+instantiated. One common behavior is to use a \code{reposetup}
+function to wrap the repository in a repository subclass provided by
+the extension. This allows the extension to modify all kinds of basic
+behavior. For example, one extension I have written hooks into the
+uisetup and sets the \code{ui.username} configuration property based on the
+SSH authentication details available from the environment.
+
+More extreme extensions can be written to add repository types. For
+example, the \code{hgsubversion} project (not included as part of
+Mercurial) registers a repository type for Subversion
+repositories. This makes it possible to clone from a Subversion
+repository almost as if it were a Mercurial repository. It's even
+possible to push back to a Subversion repository, although there are a
+number of edge cases because of the impedance mismatch between the two
+systems. The user interface, on the other hand, is completely
+transparent.
+
+For those who want to fundamentally change Mercurial, there is
+something commonly called ``monkeypatching'' in the world of dynamic
+languages. Because extension code runs in the same address space as
+Mercurial, and Python is a fairly flexible language with extensive
+reflection capabilities, it's possible (and even quite easy) to modify
+any function or class defined in Mercurial. While this can result in
+kind of ugly hacks, it's also a very powerful mechanism. For example,
+the \code{highlight} extension that lives in \code{hgext} modifies the
+built-in webserver to add syntax highlighting to pages in the
+repository browser that allow you to inspect file contents.
+
+There's one more way to extend Mercurial, which is much simpler:
+\emph{aliases}. Any configuration file can define an alias as a new
+name for an existing command with a specific group of options already
+set. This also makes it possible to give shorter names to any
+commands. Recent versions of Mercurial also include the ability to
+call a shell command as an alias, so that you can design complicated
+commands using nothing but shell scripting.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Hooks}
+
+Version control systems have long provided hooks as a way for VCS
+events to interact with the outside world. Common usage includes
+sending off a notification to a continuous integration
+system\footnote{See \aosachapref{s:integration}.} or updating the
+working directory on a web server so that changes become
+world-visible. Of course, Mercurial also includes a subsystem to
+invoke hooks like this.
+
+In fact, it again contains two variants. One is more like traditional
+hooks in other version control systems, in that it invokes scripts in
+the shell. The other is more interesting, because it allows users to
+invoke Python hooks by specifying a Python module and a function name
+to call from that module. Not only is this faster because it runs in
+the same process, but it also hands off \code{repo} and \code{ui} objects, meaning
+you can easily initiate more complex interactions inside the VCS.
+
+Hooks in Mercurial can be divided in to pre-command, post-command,
+controlling, and miscellaneous hooks. The first two are trivially
+defined for any command by specifying a pre-\emph{command} or
+post-\emph{command} key in the hooks section of a configuration
+file. For the other two types, there's a predefined set of events. The
+difference in controlling hooks is that they are run right before
+something happens, and may not allow that event to progress further.
+This is commonly used to validate changesets in some way on a central
+server; because of Mercurial's distributed nature, no such checks can
+be enforced at commit time. For example, the Python project uses a
+hook to make sure some aspects of coding style are enforced throughout
+the code base---if a changeset adds code in a style that is not
+allowed, it will be rejected by the central repository.
+
+Another interesting use of hooks is a pushlog, which is used by
+Mozilla and a number of corporate organizations. A pushlog
+records each push (since a push may contain any number of
+changesets) and records who initiated that push and when, providing
+a kind of audit trail for the repository.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Lecciones Aprendidas}
+%\begin{aosasect1}{Lessons Learned}
+
+Una de las primeras decisiones que Matt tomó cuando comenzó a desarrollar 
+Mercurial fue usar Python. Python ha sido asombroso para la extensibilidad
+(a través de extensiones y hooks) y es muy fácil programar en él. También se 
+encarga de la mayor parte de ser compatible en distintas plataformas, haciendo 
+relativamente sencillo que Mercurial opere correctamente en los tres sistemas 
+operativos principales. Por otra parte, Python es lento en comparación a muchos 
+otros lenguages (compilados). En particular, el inicio del interprete es 
+relativamente lento, lo cual es malo para herramientas que tienen muchas 
+invocaciones cortas (tales como los sistemas de versionamiento) en vez de 
+procesos que son ejecutados por largo tiempo.
+ 
+%One of the first decisions Matt made when he started to develop
+%Mercurial was to develop it in Python. Python has been great for the
+%extensibility (through extensions and hooks) and is very easy to code
+%in. It also takes a lot of the work out of being compatible across
+%different platforms, making it relatively easy for Mercurial to work
+%well across the three major OSes. On the other hand, Python is slow
+%compared to many other (compiled) languages; in particular,
+%interpreter startup is relatively slow, which is particularly bad for
+%tools that have many shorter invocations (such as a VCS) rather than
+%longer running processes.
+
+An early choice was made to make it hard to modify changesets after
+committing. Because it's impossible to change a revision without
+modifying its identity hash, ``recalling'' changesets after having
+published them on the public Internet is a pain, and Mercurial makes
+it hard to do so. However, changing unpublished revisions should
+usually be fine, and the community has been trying to make this easier
+since soon after the release. There are extensions that try to solve
+the problem, but they require learning steps that are not very
+intuitive to users who have previously used basic Mercurial.
+
+Revlogs are good at reducing disk seeks, and the layered architecture
+of changelog, manifest and filelogs has worked very well. Committing
+is fast and relatively little disk space is used for revisions.
+However, some cases like file renames aren't very efficient due to
+the separate storage of revisions for each file; this will eventually
+be fixed, but it will require a somewhat hacky layering violation.
+Similarly, the per-file DAG used to help guide filelog storage isn't
+used a lot in practice, such that some code used to administrate
+that data could be considered to be overhead.
+
+Another core focus of Mercurial has been to make it easy to learn.  We
+try to provide most of the required functionality in a small set of
+core commands, with options consistent across commands. The intention
+is that Mercurial can mostly be learned progressively, especially for
+those users who have used another VCS before; this philosophy extends
+to the idea that extensions can be used to customize Mercurial even
+more for a particular use case. For this reason, the developers also
+tried to keep the UI in line with other VCSs, Subversion in
+particular.  Similarly, the team has tried to provide good
+documentation, available from the application itself, with
+cross-references to other help topics and commands. We try hard to
+provide useful error messages, including hints of what to try instead
+of the operation that failed.
+
+Some smaller choices made can be surprising to new users. For example,
+handling tags (as discussed in a previous section) by putting them in
+a separate file inside the working directory is something many users
+dislike at first, but the mechanism has some very desirable properties
+(though it certainly has its shortcomings as well). Similarly, other
+VCSs have opted to send only the checked out changeset and any
+ancestors to a remote host by default, whereas Mercurial sends every
+committed changeset the remote doesn't have. Both approaches make some
+amount of sense, and it depends on the style of development which one
+is the best for you.
+
+En cualquier proyecto de software muchos trade-offs
+Creo que Mercurial tomó buenas decisiones, aunque 
+Históricamente Mercurial parece ser parte de la primera generación de sistemas 
+de versionamiento distribuidos lo suficientemente maduros listos para un uso 
+general. Yo, por mi parte, espero ansioso ver como será la siguiente generación. 
+
+%As in any software project, there are a lot of trade-offs to be made.
+%I think Mercurial made good choices, though of course with the benefit
+%of 20/20 hindsight some other choices might have been more appropriate.
+%Historically, Mercurial seems to be part of a first generation of
+%distributed version control systems mature enough to be ready for
+%general use. I, for one, am looking forward to seeing what the next
+%generation will look like.
+
+\end{aosasect1}
+
+\end{aosachapter}

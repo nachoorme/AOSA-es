@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw
+END
+RetargetableCompiler.png
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/RetargetableCompiler.png
+END
+X86Target.png
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/X86Target.png
+END
+LTO.png
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/LTO.png
+END
+RetargetableCompiler.graffle
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/RetargetableCompiler.graffle
+END
+X86Target.graffle
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/X86Target.graffle
+END
+LTO.graffle
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/LTO.graffle
+END
+PassLinkage.png
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/PassLinkage.png
+END
+PassLinkage.graffle
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/PassLinkage.graffle
+END
+SimpleCompiler.png
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/SimpleCompiler.png
+END
+InstallTime.png
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/InstallTime.png
+END
+LLVMCompiler1.png
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/LLVMCompiler1.png
+END
+SimpleCompiler.graffle
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/SimpleCompiler.graffle
+END
+InstallTime.graffle
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/InstallTime.graffle
+END
+LLVMCompiler1.graffle
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/272/volume1/tex/images/llvm/raw/LLVMCompiler1.graffle
+END

@@ -1,0 +1,1982 @@
+\begin{aosachapter}{Eclipse}{s:eclipse}{Kim Moir}
+
+La implementación de la modularidad en el software es una tarea notoriamente difícil.
+La interoperabilidad una gran cantidad de código fuente escrito por una
+comunidad diversa es también difícil de administrar. En Eclipse
+hemos logrado tener éxito en ambos aspectos. En Junio de 2010,
+Eclipse Foundation puso a disposición su lanzamiento coordinado Helios,
+con más de 39 proyectos y 490 "confirmadores" (del inglés commiters,
+desarrolladores con autoridad para agregar y modificar el código
+fuente) provenientes de
+más de 40 empresas trabajando juntos para desarrollar a partir
+de la funcionalidad de la plataforma básica. Cuál fue la
+visión original de la arquitectura para Eclipse? Cómo evolucionó?
+De qué manera la arquitectura de una aplicación sirve para
+promover la cohesión y crecimiento de la comunidad? Retrocedamos
+al principio.
+%Implementing software modularity is a notoriously difficult task.
+%Interoperability with a large code base written by a diverse community
+%is also difficult to manage. At Eclipse, we have managed to succeed on
+%both counts. In June 2010, the Eclipse Foundation made available its
+%Helios coordinated release, with over 39 projects and 490 committers
+%from over 40 companies working together to build upon the
+%functionality of the base platform. What was the original
+%architectural vision for Eclipse?  How did it evolve? How does the
+%architecture of an application serve to encourage community engagement
+%and growth? Let's go back to the beginning.
+
+El 7 de noviembre de 2001, un proyecto de código abierto (open source)
+llamado Eclipse 1.0 fue lanzado. En aquella fecha Eclipse fue
+descrito como ``un entorno de desarrollo integrado (IDE) para
+todo y nada en particular.'' Esta descripción fue genérica adrede,
+pues la visión de la arquitectura no era tan sólo un conjunto
+de herramientas, sino un "framework"; un framework que fuese
+modular y escalable. Eclipse proporcionó una plataforma basada
+en componentes que podría servir de base para crear herramientas
+de desarrollo para desarrolladores. Esta arquitectura extensible
+promovió que la comunidad desarrolle a partir de una plataforma núcleo
+y la extienda más allá de los límites de la versión original. Eclipse
+se inició como una plataforma y "Eclipse SDK" fue el producto
+prueba-de-concepto. Eclipse SDK permitió a los desarrolladores
+auto-alojar
+y utilizar al mismo Eclipse SDK para construir nuevas versiones de
+Eclipse.
+
+%On November 7, 2001, an open source project called Eclipse 1.0 was
+%released. At the time, Eclipse was described as ``an integrated
+%development environment (IDE) for anything and nothing in
+%particular.''  This description was purposely generic because the
+%architectural vision was not just another set of tools, but a
+%framework; a framework that was modular and scalable. Eclipse provided
+%a component-based platform that could serve as the foundation for
+%building tools for developers. This extensible architecture encouraged
+%the community to build upon a core platform and extend it beyond the
+%limits of the original vision. Eclipse started as a platform and the
+%Eclipse SDK was the proof-of-concept product.  The Eclipse SDK allowed
+%the developers to self-host and use the Eclipse SDK itself to build
+%newer versions of Eclipse.
+
+La imagen estereotipada de un desarrollador de código abierto es la
+de una persona altruista que trabaja hasta muy tarde en la noche para
+corregir "bugs" e implementar nuevas y fantásticas características
+para satisfacer sus propios intereses. Por el contrario, si retrocedemos
+a la historia inicial del proyecto Eclipse, algo de el código inicial
+que fue donado se basó en VisualAge for Java, desarrollado por IBM\@. Los
+primeros confirmadores que trabajaron en este proyecto de código abierto
+fueron empleados de una subsidiaria de IBM llamada
+Object Technology International (OTI). Ellos fueron remunerados
+a tiempo completo en el proyecto de código abierto para que
+respondan preguntas en grupos de noticias, atiendan "bugs", e
+implementen nueva funcionalidad. Se formó un consorcio de
+vendedores de software interesados en expandir esta iniciativa
+de herramientas abiertas. Los miembros iniciales del consorcio Eclipse
+fueron Borland,
+IBM, Merant, QNX Software Systems, Rational Software, RedHat, SuSE,
+y TogetherSoft.
+
+%The stereotypical image of an open source developer is that of an
+%altruistic person toiling late into night fixing bugs and implementing
+%fantastic new features to address their own personal interests. In
+%contrast, if you look back at the early history of the Eclipse
+%project, some of the initial code that was donated was based on
+%VisualAge for Java, developed by IBM\@. The first committers who worked
+%on this open source project were employees of an IBM subsidiary
+%called Object Technology International (OTI). These committers were
+%paid to work full time on the open source project, to answer questions
+%on newsgroups, address bugs, and implement new features. A consortium
+%of interested software vendors was formed to expand this open tooling
+%effort. The initial members of the Eclipse consortium were Borland,
+%IBM, Merant, QNX Software Systems, Rational Software, RedHat, SuSE,
+%and TogetherSoft.
+
+Al invertir en este esfuerzo, estas empresas tendrían la experiencia
+para lanzar productos comerciales basados en Eclipse. Esto es similar
+a las inversiones que hacen las corporaciones en contribuir al
+kernel de Linux pues es de su propio interés tener empleados mejorando
+el software abierto en que se basan sus productos comerciales. Al
+principio del año 2004, la fundación Eclipse se formó para
+administrar y expandir la creciente comunidad Eclipse. Esta fundación
+sin fines de lucro se financió con cuotas por membresía corporativa y
+se gobierna por un directorio. Hoy, la diversidad de la comunidad
+Eclipse se ha expandido hasta incluir más de 170 empresas miembro y
+casi 1000 confirmadores.
+
+%By investing in this effort, these companies would have the expertise
+%to ship commercial products based on Eclipse. This is similar to
+%investments that corporations make in contributing to the Linux kernel
+%because it is in their self-interest to have employees improving the
+%open source software that underlies their commercial offerings. In
+%early 2004, the Eclipse Foundation was formed to manage and expand the
+%growing Eclipse community.  This not-for-profit foundation was funded
+%by corporate membership dues and is governed by a board of
+%directors. Today, the diversity of the Eclipse community has expanded
+%to include over 170 member companies and almost 1000 committers.
+
+Al principio la gente conocía a ``Eclipse'' sólo como el SDK pero ahora
+es mucho más. En Julio de 2010 habían 250 proyectos distintos en
+desarrollo en eclipse.org. Hay soporte de herramientas para
+desarrollar con C/C++, PHP, web services, model driven development,
+soporte de construcción de la aplicación, y mucho más. Cada uno de
+esos proyectos está incluido en un proyecto de máximo nivel (top-level
+project, TLP) que es dirigido por un comité de dirección (PMC, project
+management committee) el cual consiste de miembros senior del
+proyecto, nominado para la responsabilidad de definir la dirección
+técnica y las metas de las versiones. Por brevedad, el alcance
+de este capítulo se limitará a la evolución de la arquitectura
+de Eclipse SDK dentro de los proyectos
+Eclipse\footnote{\url{http://www.eclipse.org}} y Runtime 
+Equinox\footnote{\url{http://www.eclipse.org/equinox}}. Puesto
+que Eclipse tiene una larga historia, me abocaré al Eclipse inicial,
+así como a las versiones (releases) 3.0, 3.4 y 4.0.
+
+%Originally, people knew ``Eclipse'' as the SDK only but today it is
+%much more.  In July 2010, there were 250 diverse projects under
+%development at eclipse.org. There's tooling to support developing with
+%C/C++, PHP, web services, model driven development, build tooling and
+%many more. Each of these projects is included in a top-level project
+%(TLP) which is managed by a project management committee (PMC)
+%consisting of senior members of the project nominated for the
+%responsibility of setting technical direction and release goals. In
+%the interests of brevity, the scope of this chapter will be limited to
+%the evolution of the architecture of the Eclipse SDK within 
+%Eclipse\footnote{\url{http://www.eclipse.org}} and Runtime 
+%Equinox\footnote{\url{http://www.eclipse.org/equinox}} projects. Since Eclipse has
+%long history, I'll be focusing on early Eclipse, as well as the 3.0,
+%3.4 and 4.0 releases.
+
+\begin{aosasect1}{Eclipse Inicial}
+%\begin{aosasect1}{Early Eclipse}
+
+Al principio del siglo 21, habían muchas herramientas para desarrolladores
+de software, pero pocas trabajaban conjuntamente. Eclipse intentó
+proporcionar una plataforma de código abierto para la creación de
+herramientas interoperables para desarrolladores de aplicaciones. Esto
+permitiría a los desarrolladores enfocarse en la escritura de nuevas
+herramientas, en lugar de escribir código para hacer frente a
+problemas de infraestructura tales como interactuar con el sistema
+de archivos, proporcionar actualizaciones de software, y conectarse
+a repositorios de código fuente. Eclipse es tal vez más famoso
+por sus herramientas de desarrollo Java (Java Development Tools, JDT). La
+intención era que tales herramientas de desarrollo servirían como
+ejemplo para las personas interesadas en proporcionar herramientas
+para otros lenguajes.
+
+%At the beginning of the 21st century, there were many tools for
+%software developers, but few of them worked together. Eclipse sought
+%to provide an open source platform for the creation of interoperable
+%tools for application developers. This would allow
+%developers to focus on writing new tools, instead of
+%writing to code deal with infrastructure issues like interacting
+%with the filesystem, providing software updates, and connecting to
+%source code repositories. Eclipse is perhaps most famous for the Java
+%Development Tools (JDT). The intent was that these exemplary Java
+%development tools would serve as an example for people interested in
+%providing tooling for other languages.
+
+Antes de introducirnos a la arquitectura de Eclipse, veamos cómo lucen
+las herramientas del Eclipse SDK para un desarrollador. Tras iniciar
+Eclipse y seleccionar el "workbench", se presenta la perspectiva Java. Una
+perspectiva organiza las vistas y editores que son específicos al grupo
+de herramientas actualmente en uso.
+%Before we delve into the architecture of Eclipse, let's look at what
+%the Eclipse SDK looks like to a developer.  Upon starting Eclipse and
+%selecting the workbench, you'll be presented with the Java
+%perspective. A perspective organizes the views and editors that are
+%specific to the tooling that is currently in use.
+
+\aosafigure{../images/eclipse/javaperspective.eps}{Perspectiva Java}{fig.ecl.jpersp}
+%\aosafigure{../images/eclipse/javaperspective.eps}{Java Perspective}{fig.ecl.jpersp}
+
+
+Las versiones iniciales de la arquitectura Eclipse SDK tenían tres
+elementos principales, que correspondieron a tres sub-proyectos
+principales: la Plataforma, el JDT (Java Development Tools) y el
+PDE (Plug-in Development Environment.)
+
+%Early versions of the Eclipse SDK architecture had three major
+%elements, which corresponded to three major sub-projects: the
+%Platform, the JDT (Java Development Tools) and the PDE (Plug-in
+%Development Environment).
+
+\begin{aosasect2}{La Plataforma}
+%\begin{aosasect2}{Platform}
+
+La plataforma Eclipse está escrita utilizando Java y por tanto
+se requiere de una máquina virtual (Java VM) para ejecutarla. Está
+construida a partir de pequeñas unidades de funcionamiento llamadas
+"plugins". Los plugins son la base del modelo de componentes de Eclipse.
+Un plugin es esencialmente un JAR con un manifiesto con el que se
+describe a sí mismo, sus dependencias, y cómo puede ser utilizado o
+extendido. La información de este manifiesto se almacenó inicialmente
+en un archivo \code{plug-in.xml} que residía en la raíz del directorio
+del plugin. El Java Development Tools (JDT) proporcionó 
+plugins para desarrollar en Java. El Plug-in development Environment
+(PDE) proporciona herramientas para desarrollar plugins para
+extender Eclipse. Los plugins de Eclipse están escritos en Java
+pero también pueden contener contribuciones de otros tipos de
+archivos (no código) tales como archivos HTML para documentación
+en línea. Cada plugin tiene su propio cargador de clases (class loader.)
+Los plugins pueden expresar dependencias con otros plugins mediante
+el uso de instrucciones \code{requires} en el archivo \code{plugin.xml}.
+Observando el archivo \code{plugin.xml} para el plugin \code{org.eclipse.ui}
+se puede ver la especificación de su nombre y versión, así como las
+dependencias que necesita importar de otros plugins.
+
+%The Eclipse platform is written using Java and a Java VM is required
+%to run it. It is built from small units of functionality called
+%plugins.  Plugins are the basis of the Eclipse component model. A
+%plugin is essentially a JAR file with a manifest which describes
+%itself, its dependencies, and how it can be utilized, or
+%extended. This manifest information was initially stored in
+%a \code{plug-in.xml} file which resides in the root of the plugin
+%directory.  The Java development tools provided plugins for
+%developing in Java. The Plug-in Development Environment (PDE) provides
+%tooling for developing plugins to extend Eclipse.  Eclipse plugins
+%are written in Java but could also contain non-code contributions such
+%as HTML files for online documentation. Each plugin has its own class
+%loader.  Plugins can express dependencies on other plugins by the
+%use of \code{requires} statements in the \code{plugin.xml}. Looking at the
+%\code{plugin.xml} for the \code{org.eclipse.ui} plugin you can see its name
+%and version specified, as well as the dependencies it needs to import
+%from other plugins.
+
+\begin{verbatim}
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="org.eclipse.ui"
+   name="%Plugin.name"
+   version="2.1.1"
+   provider-name="%Plugin.providerName"
+   class="org.eclipse.ui.internal.UIPlugin">
+
+   <runtime>
+      <library name="ui.jar">
+         <export name="*"/>
+         <packages prefixes="org.eclipse.ui"/>
+      </library>
+   </runtime>
+   <requires>
+      <import plugin="org.apache.xerces"/>
+      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.eclipse.update.core"/>
+      :       :        :
+      <import plugin="org.eclipse.text" export="true"/>
+      <import plugin="org.eclipse.ui.workbench.texteditor" export="true"/>
+      <import plugin="org.eclipse.ui.editors" export="true"/>
+   </requires>
+</plugin>
+\end{verbatim}
+
+A fin de incentivar a las personas a desarrollar a partir de la
+plataforma Eclipse, se requiere un mecanismo para hacer una
+contribución a la plataforma, y para que la plataforma acepte esta
+contribución. Esto se logra mediante el uso de extensiones
+y puntos de extensión, otro elemento del modelo de componentes de Eclipse.
+La exportación identifica nuestras interfaces que se espera que otros
+utilicen cuando escriben sus extensiones, lo que limita las clases
+que están disponibles fuera de nuestro plugin a aquellas que han sido
+exportadas. Esto además proporciona limitaciones adicionales sobre
+los recursos que están disponibles al exterior del plugin en
+contraste con hacer públicos todos los métodos y clases disponibles
+a los consumidores. Los plugins exportados son considerados
+API\@ público. Todos los otros son considerados como detalles
+de implementación privados. Para escribir un plugin que contribuirá
+con un ítem de menú en la barra de herramientas de Eclipse, se puede utilizar
+el punto de extensión \code{actionSets} en el plugin
+\code{org.eclipse.ui}.
+
+%In order to encourage people to build upon the Eclipse platform, there
+%needs to be a mechanism to make a contribution to the platform, and
+%for the platform to accept this contribution. This is achieved through
+%the use of extensions and extension points, another element of the
+%Eclipse component model. The export identifies the interfaces that you
+%expect others to use when writing their extensions, which limits the
+%classes that are available outside your plugin to the ones that are
+%exported. It also provides additional limitations on the resources
+%that are available outside the plugin, as opposed to making all
+%public methods or classes available to consumers.  Exported plugins
+%are considered public API\@. All others are considered private
+%implementation details. To write a plugin that would contribute a
+%menu item to the Eclipse toolbar, you can use the \code{actionSets}
+%extension point in the \code{org.eclipse.ui} plugin.
+
+\scriptsize
+\begin{verbatim}
+<extension-point id="actionSets" name="%ExtPoint.actionSets"
+                 schema="schema/actionSets.exsd"/>
+<extension-point id="commands" name="%ExtPoint.commands"
+                 schema="schema/commands.exsd"/>
+<extension-point id="contexts" name="%ExtPoint.contexts"
+                 schema="schema/contexts.exsd"/>
+<extension-point id="decorators" name="%ExtPoint.decorators"
+                 schema="schema/decorators.exsd"/>
+<extension-point id="dropActions" name="%ExtPoint.dropActions"
+                 schema="schema/dropActions.exsd"/> =
+\end{verbatim}
+\normalsize
+
+La extensión del plugin para contribuir con un ítem de menú al
+punto de extensión \code{org.eclipse.ui.actionSet}  lucirá así:
+%Your plugin's extension to contribute a menu item to the
+%\code{org.eclipse.ui.actionSet} extension point would look like:
+
+\begin{verbatim}
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="com.example.helloworld"
+   name="com.example.helloworld"
+   version="1.0.0">
+   <runtime>
+      <library name="helloworld.jar"/>
+   </runtime>
+   <requires>
+      <import plugin="org.eclipse.ui"/>
+   </requires>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            label="Example Action Set"
+            visible="true"
+            id="org.eclipse.helloworld.actionSet">
+         <menu
+               label="Example &Menu"
+               id="exampleMenu">
+            <separator
+                  name="exampleGroup">
+            </separator>
+         </menu>
+         <action
+               label="&Example Action"
+               icon="icons/example.gif"
+               tooltip="Hello, Eclipse world"
+               class="com.example.helloworld.actions.ExampleAction"
+               menubarPath="exampleMenu/exampleGroup"
+               toolbarPath="exampleGroup"
+               id="org.eclipse.helloworld.actions.ExampleAction">
+         </action>
+      </actionSet>
+   </extension>
+</plugin>
+\end{verbatim}
+
+Cuando Eclipse se inicia, la plataforma en tiempo de ejecución lee los
+manifiestos de los plugins que se instalan, y crea un registro de plugins
+(plugin registry) que es almacenado en memoria. Los puntos de extensión
+y sus correspondientes extensiones son mapeados por nombre. El registro
+de plugins resultante puede ser referenciado desde el API proporcionada
+por la plataforma Eclipse. El registro es almacenado en caché de disco
+para que esta información pueda ser recargada en la siguiente oportunidad
+que Eclipse es reiniciado. Todos los plugins son descubiertos al inicio
+para poblar el registro pero no son activados (sus clases cargadas) hasta
+que el código es realmente utilizado. Esta estrategia se denomina
+"lazy activation". El impacto en rendimiento de agregar componentes
+(bundles) adicionales en la instalación, se reduce mediante la postergación
+de la carga de las clases asociadas con los plugins hasta que se necesitan.
+Por ejemplo, el plugin que contribuye el punto de extensión
+org.eclipse.ui.actionSet no se activaría hasta que el usuario seleccione
+el nuevo ítem de menú en la barra de herramientas.
+
+%When Eclipse is started, the runtime platform scans the manifests of
+%the plugins in your install, and builds a plugin registry that is
+%stored in memory.  Extension points and the corresponding extensions
+%are mapped by name. The resulting plugin registry can be referenced
+%from the API provided by the Eclipse platform.  The registry is cached to
+%disk so that this information can be reloaded the next time Eclipse is
+%restarted. All plugins are discovered upon startup to populate the
+%registry but they are not activated (classes loaded) until the code is
+%actually used. This approach is called lazy activation. The
+%performance impact of adding additional bundles into your install is
+%reduced by not actually loading the classes associated with the
+%plugins until they are needed. For instance, the plugin that
+%contributes to the org.eclipse.ui.actionSet extension point wouldn't
+%be activated until the user selected the new menu item in the toolbar.
+
+\aosafigure[300pt]{../images/eclipse/examplemenu.eps}{Menú de Ejemplo}{fig.ecl.menu}
+%\aosafigure[300pt]{../images/eclipse/examplemenu.eps}{Example Menu}{fig.ecl.menu}
+
+El código que genera este ítem de menú luce así:
+%The code that generates this menu item looks like this:
+
+\begin{verbatim}
+package com.example.helloworld.actions;
+
+import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+import org.eclipse.jface.dialogs.MessageDialog;
+
+public class ExampleAction implements IWorkbenchWindowActionDelegate {
+    private IWorkbenchWindow window;
+
+    public ExampleAction() {
+    }
+
+    public void run(IAction action) {
+        MessageDialog.openInformation(
+            window.getShell(),
+            "org.eclipse.helloworld",
+            "Hello, Eclipse architecture world");
+    }
+
+    public void selectionChanged(IAction action, ISelection selection) {
+    }
+
+    public void dispose() {
+    }
+
+    public void init(IWorkbenchWindow window) {
+        this.window = window;
+    }
+}
+\end{verbatim}
+
+Una vez que el usuario selecciona un nuevo ítem de menú en la barra
+de herramientas, la extensión del registro es consultada por el 
+plugin que implementa el punto de extensión. El plugin que proporciona
+la extensión instancia la contribución, y carga el plugin. Una vez
+que el plugin es activado, el constructor de \code{ExampleAction}
+en nuestro ejemplo se ejecuta, y entonces inicializa un
+delegado de acción (action delegate) \code{Workbench}. Puesto que
+la selección en el workbench ha cambiado y el delegado ha sido creado,
+la acción puede cambiar. El diálogo de mensaje se abre con el mensaje
+``Hello, Eclipse architecture world''.
+
+%Once the user selects the new item in the toolbar, the extension
+%registry is queried by the plugin implementing the extension point.
+%The plugin supplying the extension instantiates the contribution, and
+%loads the plugin. Once the plugin is activated, the \code{ExampleAction}
+%constructor in our example is run, and then initializes a \code{Workbench}
+%action delegate. Since the selection in the workbench has changed and
+%the delegate has been created, the action can change. The message
+%dialog opens with the message ``Hello, Eclipse architecture world''.
+
+Esta arquitectura extensible fue una de las claves para el exitoso
+crecimiento del ecosistema Eclipse. Empresas o individuos pudieron
+desarrollar nuevos plugins, y publicarlos ya sea como código
+abierto o venderlos comercialmente.
+
+%This extensible architecture was one of the keys to the successful
+%growth of the Eclipse ecosystem. Companies or individuals could
+%develop new plugins, and either release them as open source or sell
+%them commercially.
+
+Uno de los conceptos más importantes acerca de Eclipse es que
+\emph{todo es un plugin}. Ya sea que el plugin esté incluido en la
+plataforma Eclipse, o que lo escribas tú mismo, los plugins son todos
+componentes de primera clase de la aplicación 
+ensamblada. \aosafigref{fig.ecl.plat} muestra conjuntos de
+funcionalidad relacionada contribuida por plugins en las primeras
+versiones de Eclipse.
+
+%One of the most important concepts about Eclipse is that
+%\emph{everything is a plugin}. Whether the plugin is included in the
+%Eclipse platform, or you write it yourself, plugins are all first
+%class components of the assembled
+%application. \aosafigref{fig.ecl.plat} shows clusters of related
+%functionality contributed by plugins in early versions of Eclipse.
+
+\aosafigure[250pt]{../images/eclipse/platform.eps}{Arquitectura Inicial de Eclipse}{fig.ecl.plat}
+%\aosafigure[250pt]{../images/eclipse/platform.eps}{Early Eclipse Architecture}{fig.ecl.plat}
+
+El workbench es el elemento de interfaz de usuario (UI) más familiar
+a los usuarios de la plataforma Eclipse, en tanto proporciona las
+estructuras que organizan cómo Eclipse aparece al usuario en el escritorio.
+El workbench consiste de perspectivas, vistas y editores. Los editores
+están asociados con tipos de archivos tal que el editor correcto es
+iniciado cuando un archivo es abierto. Un ejemplo de una vista
+es la vista ``problemas'' que indica errores o alertas en el código
+Java. Juntos, los editores y vistas forman una perspectiva que presenta
+las herramientas al usuario de un modo organizado.
+
+%The workbench is the most familiar UI element to users of the Eclipse
+%platform, as it provides the structures that organize how Eclipse
+%appears to the user on the desktop. The workbench consists of
+%perspectives, views, and editors.  Editors are associated with file
+%types so the correct editor is launched when a file is opened. An
+%example of a view is the ``problems'' view that indicates errors or
+%warnings in your Java code. Together, editors and views form a
+%perspective which presents the tooling to the user in an organized
+%fashion.
+
+El workbench de Eclipse está desarrollado a partir del
+Standard Widget Toolkit (SWT) y JFace; SWT merece algo de atención aquí.
+Los toolkits de widgets (cajas de herramientas de componentes gráficos)
+generalmente se clasifican como nativos y emulados. Un toolkit de
+widgets nativo usa llamadas al sistema operativo para crear
+componentes de la interfaz de usuario tales como listas y
+botones. La interacción con los componentes es administrada por
+el sistema operativo. Un toolkit de widgets emulado implementa
+los componentes por fuera del sistema operativo, haciéndose cargo
+del teclado y ratón, de dibujar, fijar el foco y otras funcionalidades
+del mismo widget, en lugar de delegar al sistema operativo. Ambos
+diseños tienen diferentes fortalezas y debilidades.
+
+%The Eclipse workbench is built on the Standard Widget Toolkit (SWT)
+%and JFace, and SWT deserves a bit of exploration.  Widget toolkits are
+%generally classified as either native or emulated.  A native widget
+%toolkit uses operating system calls to build user interface components
+%such as lists and push buttons.  Interaction with components is
+%handled by the operating system. An emulated widget toolkit implements
+%components outside of the operating system, handling mouse and
+%keyboard, drawing, focus and other widget functionality itself, rather
+%than deferring to the operating system.  Both designs have different
+%strengths and weaknesses.
+
+Los widgets nativos son ``pixel perfect.'' Sus widgets lucen
+y se perciben como sus análogos en otras aplicaciones en el
+escritorio. Los vendedores de sistemas operativos constantemente
+cambian la apariencia y estilo de sus widgets y agregan nuevas
+características. Los toolkits de widgets nativos obtienen esas
+actualizaciones gratuitamente. Desafortunadamente, los toolkits
+nativos son difíciles de implementar debido a que las implementaciones
+de widgets del sistema operativo son muy distintas, lo que conduce
+a inconsistencias y programas que no son portables.
+
+%Native widget toolkits are ``pixel perfect.'' Their widgets look and
+%feel like their counterparts in other applications on the
+%desktop. Operating system vendors constantly change the look and feel
+%of their widgets and add new features. Native widget toolkits get
+%these updates for free.  Unfortunately, native toolkits are difficult
+%to implement because their underlying operating system widget
+%implementations are vastly different, leading to inconsistencies and
+%programs that are not portable.
+
+Los toolkits de widgets emulados ya sea proporcionan su propia
+apariencia, o tratan de copiar y comportarse como los del sistema
+operativo. Su gran fortaleza sobre los widgets nativos es la
+flexibilidad (aunque los toolkits de widgets nativos modernos
+tales como el Windows Presentation Framework (WPF) son igualmente
+flexibles.) Debido a que el código que implementa un widget es
+parte del toolkit en vez de pertenecer al sistema operativo,
+un widget puede ser dibujado de cualquier manera deseada. Los
+programas que utilizan toolkits de widgets emulados son altamente
+portables. Los toolkits de widget emulados inicialmente tuvieron
+una mala reputación. Fueron con frecuencia lentos y realizaban un
+mal trabajo tratando de emular al sistema operativo, haciéndolos
+verse fuera de lugar en el escritorio. En particular, los programas
+en Smalltalk-80 en su momento eran fáciles de reconocer debido a sus
+widgets emulados. Los usuarios percibían que estaban ejecutando
+un ``programa Smalltalk'' y esto redujo la aceptación de las aplicaciones
+escritas en Smalltalk.
+
+%Emulated widget toolkits either provide their own look and feel, or
+%try to draw and behave like the operating system. Their great strength
+%over native toolkits is flexibility (although modern native widget
+%toolkits such as Windows Presentation Framework (WPF) are equally as
+%flexible). Because the code to implement a widget is part of the
+%toolkit rather than embedded in the operating system, a widget can be
+%made to draw and behave in any manner. Programs that use emulated
+%widget toolkits are highly portable.  Early emulated widget toolkits
+%had a bad reputation. They were often slow and did a poor job of
+%emulating the operating system, making them look out of place on the
+%desktop.  In particular, Smalltalk-80 programs at the time were easy
+%to recognize due to their use of emulated widgets. Users were aware
+%that they were running a ``Smalltalk program'' and this hurt
+%acceptance of applications written in Smalltalk.
+
+A diferencia de otros lenguajes de programación como C y C++, las
+primeras versiones de Java venían con un toolkit de widgets nativo
+llamado el AWT (Abstract Window Toolkit.) AWT se consideraba limitado,
+con errores e inconsistente y fue largamente criticado. En Sun y
+en todo lugar, en parte debido a la experiencia con AWT, un toolkit
+de widgets nativo que sea portable y de buen rendimiento se
+consideró irrealizable. La solución fue Swing, un toolkit de widgets
+emulado de funcionalidad muy completa.
+
+%Unlike other computer languages such as C and C++, the first versions
+%of Java came with a native widget toolkit library called the Abstract
+%Window Toolkit (AWT). AWT was considered to be limited, buggy and
+%inconsistent and was widely decried. At Sun and elsewhere, in part
+%because of experience with AWT, a native widget toolkit that was
+%portable and performant was considered to be unworkable. The solution
+%was Swing, a full-featured emulated widget toolkit.
+
+Alrededor de 1999, OTI utilizaba Java para implementar un producto llamado
+VisualAge Micro Edition. La primera versión de VisualAge Micro Edition
+necesitó Swing y la experiencia de OTI con Swing no fue positiva. Las
+versiones iniciales de Swing tenían muchos problemas, tenían fallos
+de temporización y memoria y el hardware de la época no era suficientemente
+potente como para proporcionar una performance aceptable. OTI había
+creado exitosamente un toolkit de widgets nativo para Smalltalk-80 y
+otras implementaciones de Smalltalk para ganar la aceptación de
+Samlltalk. Esta experiencia se utilizó para crear la primera
+versión de SWT\@. VisualAge Micro Edition y SWT fueron un éxito
+y SWT fue la elección natural cuando se inició el trabajo con Eclipse. El
+uso de SWT en vez de Swing en Eclipse dividió a la comunidad Java. Algunos
+vieron conspiraciones, pero Eclipse fue un éxito y el uso de SWT
+lo diferenció de otros programas Java. Eclipse tenía buen rendimiento,
+era "pixel perfect" y la sensación general fue, ``no puedo crear
+que este es un programa Java.''
+
+%Around 1999, OTI was using Java to implement a product called
+%VisualAge Micro Edition. The first version of VisualAge Micro Edition
+%used Swing and OTI's experience with Swing was not positive. Early
+%versions of Swing were buggy, had timing and memory issues and the
+%hardware at the time was not powerful enough to give acceptable
+%performance. OTI had successfully built a native widget toolkit for
+%Smalltalk-80 and other Smalltalk implementations to gain acceptance of
+%Smalltalk.  This experience was used to build the first version of
+%SWT\@. VisualAge Micro Edition and SWT were a success and SWT was the
+%natural choice when work began on Eclipse.  The use of SWT over Swing
+%in Eclipse split the Java community. Some saw conspiracies, but
+%Eclipse was a success and the use of SWT differentiated it from other
+%Java programs.  Eclipse was performant, pixel perfect and the general
+%sentiment was, ``I can't believe it's a Java program.''
+
+Los primeros SDK de Eclipse se ejecutaron el Linux y Windows. Para
+2010, hay soporte para más de una docena de plataformas. Un desarrollador
+puede escribir una aplicación para una plataforma y desplegar en 
+múltiples plataformas. Desarrollar un nuevo toolkit de widgets
+para Java fue un asunto contencioso dentro de la comunidad Java
+en aquel tiempo, pero los confirmadores de Eclipse percibían que
+merecía el esfuerzo el proporcionar la mejor experiencia nativa
+en el escritorio. Esta aserción se mantiene hoy, y hay millones
+de líneas de código que dependen de SWT.
+
+%Early Eclipse SDKs ran on Linux and Windows. In 2010, there is support
+%for over a dozen platforms. A developer can write an application for
+%one platform, and deploy it to multiple platforms. Developing a new
+%widget toolkit for Java was a contentious issue within the Java
+%community at the time, but the Eclipse committers felt that it was
+%worth the effort to provide the best native experience on the
+%desktop. This assertion applies today, and there are millions of lines
+%of code that depend on SWT.
+
+JFace es una capa encima de SWT que proporciona herramientas para
+tareas de programación gráfica comunes, tales como frameworks
+de preferencias y "wizards". Al igual que SWT, fue diseñado para
+trabajar con cualquier sistema de ventanas. Sin embargo, es código
+Java puro y no contiene ningún código nativo a plataforma.
+
+%JFace is a layer on top of SWT that provides tools for common UI
+%programming tasks, such as frameworks for preferences and
+%wizards. Like SWT, it was designed to work with many windowing
+%systems. However, it is pure Java code and doesn't contain any native
+%platform code.
+
+La plataforma también proporcionó un sistema de ayuda integrada basado
+en pequeñas unidades de información denominadas tópicos. Un tópico
+consiste de una etiqueta y una referencia a su localización. La
+localización puede ser un archivo de documentación HTML, o un
+documento XML describiendo enlaces adicionales. Los tópicos son
+agrupados juntos en tablas de contenidos (TOCs.) Considérese los
+tópicos como las hojas, y las TOCs como las ramas de organización.
+Para agregar contenido de ayuda a la aplicación, se puede
+contribuir al punto de extensión \code{org.eclipse.help.toc} tal
+como hace el \code{plugin.xml} de \code{org.eclipse.platform.doc.isv}
+a continuación.
+
+%The platform also provided an integrated help system based upon small
+%units of information called topics. A topic consists of a label and a
+%reference to its location.  The location can be an HTML documentation
+%file, or an XML document describing additional links.  Topics are
+%grouped together in table of contents (TOCs).  Consider the topics as
+%the leaves, and TOCs as the branches of organization. To add help
+%content to your application, you can contribute to the
+%\code{org.eclipse.help.toc} extension point, as the
+%\code{org.eclipse.platform.doc.isv} \code{plugin.xml} does below.
+
+\begin{verbatim}
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+<!-- ===================================================================== -->
+<!-- Define primary TOC                                                    -->
+<!-- ===================================================================== -->
+   <extension
+         point="org.eclipse.help.toc">
+      <toc
+            file="toc.xml"
+            primary="true">
+      </toc>
+      <index path="index"/>
+   </extension>
+<!-- ===================================================================== -->
+<!-- Define TOCs                                                           -->
+<!-- ===================================================================== -->
+   <extension
+         point="org.eclipse.help.toc">
+      <toc
+            file="topics_Guide.xml">
+      </toc>
+      <toc
+            file="topics_Reference.xml">
+      </toc>
+      <toc
+            file="topics_Porting.xml">
+      </toc>
+      <toc
+            file="topics_Questions.xml">
+      </toc>
+      <toc
+            file="topics_Samples.xml">
+      </toc>
+   </extension>
+\end{verbatim}
+
+Apache Lucene es utilizado para indexar y buscar en el contenido de ayuda
+en línea. En las primeras versiones de Eclipse, la ayuda en línea
+se proporcionaba como una aplicación web Tomcat. Adicionalmente,
+al proporcionar ayuda dentro del mismo Eclipse, es posible utilizar
+el subconjunto de plugins de ayuda para proporcionar un servidor
+de ayuda independiente.\footnote{For example: \url{http://help.eclipse.org}.}
+
+%Apache Lucene is used to index and search the online help content. In
+%early versions of Eclipse, online help was served as a Tomcat web
+%application. Additionally, by providing help within Eclipse itself, you
+%can also use the subset of help plugins to provide a standalone help
+%server.\footnote{For example: \url{http://help.eclipse.org}.}
+
+Eclipse también proporciona soporte para equipos a fin de interactuar
+con un repositorio de código fuente, crear parches y otras tareas
+comunes. El workspace proporciona un conjunto de archivos
+y metadata para almacenar el trabajo en el sistema de archivos. También
+hay un debugger (depurador) para hacer seguimiento a problemas
+en el código Java, así como un framework para desarrollar
+depuradores para lenguajes específicos.
+
+%Eclipse also provides team support to interact with a source code
+%repository, create patches and other common tasks.  The workspace
+%provided collection of files and metadata that stored your work on the
+%filesystem. There was also a debugger to trace problems in the
+%Java code, as well as a framework for building language specific
+%debuggers.
+
+Uno de los objetivos del proyecto Eclipse fue incentivar
+a consumidores de esta tecnología tanto comerciales como de código abierto,
+a extender la plataforma para satisfacer sus necesidades, y una forma
+de incentivar esta adopción es proporcionar un API\@ estable. Un
+API puede ser pensada como un contrato técnico especificando el
+comportamiento de la aplicación. También puede ser pensado
+como un contrato social. En el proyecto Eclipse, el mantra es,
+``API is forever'' (el API es para siempre.) Por tanto, debe darse
+una cuidadosa consideración cuando se está escribiendo un API puesto que
+está destinado a ser utilizado indefinidamente. Un API estable
+es un contrato entre el cliente o consumidor del API, y el proveedor.
+Este contrato asegura que el cliente puede depender de la plataforma
+Eclipse al proveer el API por largo tiempo sin necesidad de un
+doloroso "refactoring" de parte del cliente. Un buen API es
+también suficientemente flexible para permitir la evolución de la
+implementación.
+
+%One of the goals of the Eclipse project was to encourage open source
+%and commercial consumers of this technology to extend the platform to
+%meet their needs, and one way to encourage this adoption is to provide a
+%stable API\@. An API can be thought of as a technical contract
+%specifying the behavior of your application. It also can be thought
+%of as a social contract. On the Eclipse project, the mantra is, ``API
+%is forever''. Thus careful consideration must be given when writing an
+%API given that it is meant to be used indefinitely. A stable API is
+%a contract between the client or API consumer and the provider. This
+%contract ensures that the client can depend on the Eclipse platform to
+%provide the API for the long term without the need for painful
+%refactoring on the part of the client.  A good API is also flexible
+%enough to allow the implementation to evolve.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Java Development Tools (JDT)}
+%\begin{aosasect2}{Java Development Tools (JDT)}
+
+El JDT proporciona editores, wizards, soporte de refactoring, depurador,
+compilador y un constructor incremental de aplicaciones Java. El
+compilador también se utiliza para asistencia de contenido, navegación
+y otras características de edición. Eclipse no se distribuye
+con un SDK Java por lo que es función del usuario elegir qué SDK
+instalar en su equipo. Por qué el equipo JDT escribió un compilador
+separado para compilar el código Java dentro de Eclipse? Ellos
+tenían un compilador inicial contribuido desde VisualAge Micro Edition.
+Ellos planearon construir las herramientas a partir del compilador, por lo
+que escribir el compilador en sí mismo fue una decisión lógica. Esta
+estrategia también permitió a los confirmadores de JDT proporcionar
+puntos de extensión para extender el compilador. Esto sería
+difícil si el compilador fuese una aplicación de línea de comandos
+proporcionada por un tercero.
+
+%The JDT provides Java editors, wizards, refactoring support, debugger,
+%compiler and an incremental builder.  The compiler is also used for
+%content assist, navigation and other editing features. A Java SDK
+%isn't shipped with Eclipse so it's up to the user to choose which SDK to
+%install on their desktop. Why did the JDT team write a separate
+%compiler to compile your Java code within Eclipse?  They had an
+%initial compiler code contribution from VisualAge Micro Edition. They
+%planned to build tooling on top of the compiler, so writing the
+%compiler itself was a logical decision. This approach also allowed the
+%JDT committers to provide extension points for extending the
+%compiler. This would be difficult if the compiler was a command line
+%application provided by a third party.
+
+Escribir su propio compilador proporcionó un mecanismo para proveer
+soporte a un constructor incremental dentro del IDE\@. Un constructor
+incremental proporciona mejor rendimiento pues sólo recompila archivos
+que han cambiado o sus dependencias. Cómo trabaja el constructor
+incremental? Cuando se crea un proyecto Java dentro de Eclipse,
+se están creando recursos en el workspace para almacenar los archivos.
+Un constructor dentro de Eclipse toma archivos de entrada
+dentro del workspace (archivos \code{.java}), y crea
+una salida (archivos \code{.class}.) Mediante el estado de construcción,
+el constructor sabe acerca de los tipos (clases o interfaces) en el
+workspace, y cómo se referencian mutuamente. El estado de construcción
+es proporcionado al constructor por el compilador cada vez que un
+archivo fuente es compilado. Cuando una construcción incremental
+se invoca, el constructor recibe un delta de recursos, que describe
+cualquier archivo nuevo, modificado o borrado. Los archivos
+fuente eliminados hacen que sus archivos class correspondientes sean
+eliminados. Los archivos nuevos o modificados se agregan a una cola. Los
+archivos en la cola son compilados en secuencia y comparados con el antiguo
+archivo class para determinar si hay cambios estructurales. Los cambios
+estructurales son modificaciones a la clase que puede impactar en otro
+tipo que la referencia. Por ejemplo, cambiar la firma de un método, o
+agregar o eliminar un método. Si hay cambios estructurales, todos los tipos
+que lo referencian también son agregados a la cola. Si el tipo ha cambiado,
+la nueva clase es escrita en la carpeta de salida de la construcción.
+El estado de construcción es actualizado con información de referencia
+para el tipo compilado. Este proceso es repetido para todos los tipos
+en la cola hasta que está vacía. Si hay errores de compilación, el editor
+Java creará marcadores de problemas. A través de los años, las herramientas
+JDT se han expandido tremendamente en concertación con las nuevas
+versiones del runtime Java.
+
+%Writing their own compiler provided a mechanism to provide support for
+%an incremental builder within the IDE\@. An incremental builder provides
+%better performance because it only recompiles files that have changed
+%or their dependencies. How does the incremental builder work? When
+%you create a Java project within Eclipse, you are creating resources
+%in the workspace to store your files.  A builder within Eclipse takes
+%the inputs within your workspace (\code{.java} files), and creates an
+%output (\code{.class} files).  Through the build state, the builder
+%knows about the types (classes or interfaces) in the workspace, and
+%how they reference each other. The build state is provided to the
+%builder by the compiler each time a source file is compiled. When an
+%incremental build is invoked, the builder is supplied with a resource
+%delta, which describes any new, modified or deleted files. Deleted
+%source files have their corresponding class files deleted. New or
+%modified types are added to a queue.  The files in the queue are
+%compiled in sequence and compared with the old class file to determine
+%if there are structural changes. Structural changes are modifications
+%to the class that can impact another type that references it. For
+%example, changing a method signature, or adding or removing a
+%method. If there are structural changes, all the types that reference
+%it are also added to the queue.  If the type has changed at all, the
+%new class file is written to the build output folder.  The build state
+%is updated with reference information for the compiled type. This
+%process is repeated for all the types in the queue until empty. If
+%there are compilation errors, the Java editor will create problem
+%markers. Over the years, the tooling that JDT provides has expanded
+%tremendously in concert with new versions of the Java runtime itself.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Entorno de desarrollo de Plug-ins}
+%\begin{aosasect2}{Plug-in Development Environment (PDE) }
+
+El entorno de desarrollo de Plugins (Plug-in Development Environment, PDE) 
+proporcionó las herramientas para desarrollar, construir, desplegar
+y probar plugins y otros artefactos que son utilizados para extender
+la funcionalidad de Eclipse. Puesto que los plugins de Eclipse
+fueron un nuevo tipo de artefacto en el mundo Java, no había
+un sistema de construcción que pudiera transformar el código fuente
+en plugins. Por tanto, el equipo PDE escribió un componente llamado
+"PDE Build" que examinó las dependencias de los plugins y generó
+scripts Ant para crear los artefactos de construcción.
+
+%The Plug-in Development Environment (PDE) provided the tooling to
+%develop, build, deploy and test plugins and other artifacts that are
+%used to extend the functionality of Eclipse. Since Eclipse plugins
+%were a new type of artifact in the Java world there wasn't a build
+%system that could transform the source into plugins.  Thus the PDE
+%team wrote a component called PDE Build which examined the
+%dependencies of the plugins and generated Ant scripts to construct
+%the build artifacts.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Eclipse 3.0: Runtime, RCP y Robots}
+%\begin{aosasect1}{Eclipse 3.0: Runtime, RCP and Robots}
+
+\begin{aosasect2}{Runtime}
+%\begin{aosasect2}{Runtime}
+
+Eclipse 3.0 fue probablemente uno de las versiones más importantes
+de Eclipse debido a la cantidad de cambios importantes que ocurrieron
+durante este ciclo de lanzamiento. En la arquitectura pre-3.0, el
+modelo de componentes de Eclipse consistió de plugins que podían
+interactuar mutuamente de dos formas. Primero, ellos podían expresar
+sus dependencias mediante el uso de la instrucción
+\code{requires} en su \code{plugin.xml}. Si el plugin
+A requiere el plugin B, entonces el plugin A puede ver todas las
+clases Java y recursos de B, respetando las convenciones de visibilidad
+de clases Java. Cada plugin tenía una versión, y podían especificar las
+versiones de sus dependencias. En segundo lugar, el modelo de componentes
+proporcionaba 
+\emph{extensiones} y \emph{puntos de extensión}.  Históricamente, los
+confirmadores de Eclipse escribieron su propio runtime para el SDK Eclipse
+para administrar la carga de clases (classloading), dependencias de plugins
+y extensiones, y puntos de extensión.
+
+%Eclipse 3.0 was probably one of the most important Eclipse releases
+%due to the number of significant changes that occurred during this
+%release cycle.  In the pre-3.0 Eclipse architecture, the Eclipse component
+%model consisted of plugins that could interact with each other in two
+%ways.  First, they could express their dependencies by the use of
+%the \code{requires} statement in their \code{plugin.xml}.  If plugin
+%A requires plugin B, plugin A can see all the Java classes and
+%resources from B, respecting Java class visibility conventions.  Each
+%plugin had a version, and they could also specify the versions of
+%their dependencies.  Secondly, the component model provided
+%\emph{extensions} and \emph{extension points}.  Historically, Eclipse
+%committers wrote their own runtime for the Eclipse SDK to manage
+%classloading, plugin dependencies and extensions and extension
+%points. 
+
+El proyecto Equinox fue creado como un nuevo proyecto "de incubación"
+en Eclipse. La meta del proyecto Equinox fue reemplazar el modelo
+de componentes Eclipse con uno que ya existía, así como proporcionar
+soporte a plugins dinámicos. Las soluciones consideradas incluyeron
+JMX, Jakarta Avalon y OSGi. JMX no era un modelo de componentes
+totalmente desarrollado por lo que no se consideró apropiado. Jakarta
+Avalon no fue elegido pues parecía estar perdiendo impulso como
+proyecto. Adicionalmente a los requerimientos técnico, también era
+importante considerar la comunidad que soportaba esas tecnologías.
+Estarían dispuestos a incorporar cambios específicos de Eclipse?
+Estaba siendo activamente desarrollada y ganando nuevos adeptos?
+El equipo Equinox percibió que la comunidad alrededor de la
+opción tecnológica elegida era tan importante como las consideraciones
+técnicas.
+
+%The Equinox project was created as a new incubator project at Eclipse.
+%The goal of the Equinox project was to replace the Eclipse component
+%model with one that already existed, as well as provide
+%support for dynamic plugins. The solutions under consideration
+%included JMX, Jakarta Avalon and OSGi. JMX was not a fully developed component
+%model so it was not deemed appropriate. Jakarta Avalon wasn't chosen
+%because it seemed to be losing momentum as a project. In addition to
+%the technical requirements, it was also important to consider the
+%community that supported these technologies.  Would they be willing to
+%incorporate Eclipse-specific changes? Was it actively developed and
+%gaining new adopters?  The Equinox team felt that the community around
+%their final choice of technology was just as important as the
+%technical considerations.
+
+Tras investigar y evaluar las alternativas disponibles, los confirmadores
+eligieron OSGi. Por qué OSGi? Éste tenía un esquema de versionamiento
+semántico para administrar dependencias. Proporcionaba un framework
+para modularidad del que adolecía el mismo JDK. Los paquetes que
+estaban disponibles a otros componentes (bundles) debían ser
+explícitamente exportados, y todos los otros estarían ocultos.
+OSGi proporcionaba su propio cargador de clases (classloader) de modo
+tal que el equipo Equinox no tendría que continuar manteniendo el
+suyo. Al estandarizarse en un modelo de componentes que tenía mayor
+adopción fuera del ecosistema Eclipse, ellos percibieron que
+podrían atraer a una comunidad más amplia y posteriormente
+promover la adopción de Eclipse.
+
+%After researching and evaluating the available alternatives, the
+%committers selected OSGi. Why OSGi?  It had a semantic versioning
+%scheme for managing dependencies. It provided a framework for
+%modularity that the JDK itself lacked. Packages that were available to
+%other bundles must be explicitly exported, and all others were hidden.
+%OSGi provided its own classloader so the Equinox team didn't have to
+%continue to maintain their own. By standardizing on a component model
+%that had wider adoption outside the Eclipse ecosystem, they felt they
+%could appeal to a broader community and further drive the adoption of
+%Eclipse.
+
+El equipo Equinox percibió con satisfacción que al poseer OSGi
+una entusiasta comunidad, ellos podrían trabajar con esa comunidad
+para ayudar a incluir la funcionalidad que Eclipse requería en un
+modelo de componentes. Por ejemplo, en ese momento, OSGi sólo
+soportaba el listado de requisitos a nivel de paquete, no a nivel
+de plugin como requería Eclipse. Adicionalmente, OSGi todavía
+no incluía el concepto de fragmentos, que eran el mecanismo preferido
+de Eclipse para proporcionar código específico de plataforma o de
+entorno a un plugin existente. Por ejemplo, los fragmentos proporcionan
+código para trabajar con sistemas de archivo Linux y Windows, así como
+fragmentos que contribuyen con traducciones de lenguajes. Una vez
+tomada la decisión de proceder con OSGi como el nuevo runtime, los
+confirmadores necesitaban una implementación de código abierto. Ellos
+evaluaron Oscar, el precursor de Apache Felix, y el
+Service Management Framework (SMF) desarrollado por IBM\@. En ese
+momento Oscar era un proyecto de investigación con limitado desarrollo.
+SMF fue elegido finalmente pues ya se distribuía en productos y
+fue considerado "enterprise-ready" (listo para empresas.) La
+implementación Equinox sirve como la implementación de referencia
+de la especificación OSGi.
+
+%The Equinox team felt comfortable that since OSGi already had an
+%existing and vibrant community, they could work with that community to
+%help include the functionality that Eclipse required in a component
+%model.  For instance, at the time, OSGi only supported listing
+%requirements at a package level, not a plugin level as Eclipse
+%required. In addition, OSGi did not yet include the concept of
+%fragments, which were Eclipse's preferred mechanism for supplying
+%platform or environment specific code to an existing plugin. For
+%example, fragments provide code for working with Linux and Windows
+%filesystems as well as fragments which contribute language
+%translations. Once the decision was made to proceed with OSGi as the
+%new runtime, the committers needed an open source framework
+%implementation. They evaluated Oscar, the precursor to Apache Felix,
+%and the Service Management Framework (SMF) developed by IBM\@. At the
+%time, Oscar was a research project with limited deployment.  SMF was
+%ultimately chosen since it was already used in shipping products and
+%thus was deemed enterprise-ready. The Equinox implementation serves as
+%the reference implementation of the OSGi specification.
+
+Una capa de compatibilidad también fue proporcionada tal que
+los plugins existentes sigan funcionando en una instalación 3.0.
+Solicitar a los desarrolladores la reescritura de sus plugins para
+acomodarse a los cambios en la infraestructura interna de Eclipse
+3.0 hubiera paralizado el impulso de Eclipse como plataforma
+de herramientas. La expectativa de los consumidores de Eclipse
+es que la plataforma simplemente continué funcionando.
+
+%A compatibility layer was also provided so that existing plugins
+%would still work in a 3.0 install. Asking developers to rewrite their
+%plugins to accommodate changes in the underlying infrastructure of
+%Eclipse 3.0 would have stalled the momentum on Eclipse as a tooling
+%platform. The expectation from Eclipse consumers was that the platform
+%should just continue to work.
+
+Con el cambio a OSGi, los plugins de Eclipse se hicieron conocidos
+como "bundles". Un plugin y un bundle son la misma cosa: Ambos proporcionan
+un subconjunto de funcionalidad modular que se auto-describe con metadata
+en un manifiesto. Anteriormente, las dependencias, paquetes exportados
+y las extensiones y puntos de extensión fueron descritas en
+\code{plugin.xml}. Con el cambio a bundles OSGi, las extensiones
+y puntos de extensión continuaron siendo descritos en \code{plugin.xml}
+puesto que son conceptos de Eclipse. El resto de información se
+describe en el \code{META-INF/MANIFEST.MF}, que es la versión
+OSGi del manifiesto del bundle. Para soportar este cambio, el PDE
+proporcionó un nuevo editor de manifiesto dentro de Eclipse. Cada
+bundle tiene un nombre y versión. El manifiesto del
+bundle \code{  org.eclipse.ui} es así:
+
+%With the switch to OSGi, Eclipse plugins became known as bundles. A
+%plugin and a bundle are the same thing: They both provide a modular
+%subset of functionality that describes itself with metadata in a
+%manifest.  Previously, dependencies, exported packages and the
+%extensions and extension points were described in \code{plugin.xml}.
+%With the move to OSGi bundles, the extensions and extension points
+%continued to be described in \code{plugin.xml} since they are Eclipse
+%concepts. The remaining information was described in
+%the \code{META-INF/MANIFEST.MF}, OSGi's version of the bundle
+%manifest. To support this change, PDE provided a new manifest editor
+%within Eclipse.  Each bundle has a name and version. The manifest for
+%\code{the org.eclipse.ui} bundle looks like this:
+
+\begin{verbatim}
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %Plugin.name
+Bundle-SymbolicName: org.eclipse.ui; singleton:=true
+Bundle-Version: 3.3.0.qualifier
+Bundle-ClassPath: .
+Bundle-Activator: org.eclipse.ui.internal.UIPlugin
+Bundle-Vendor: %Plugin.providerName
+Bundle-Localization: plugin
+Export-Package: org.eclipse.ui.internal;x-internal:=true
+Require-Bundle: org.eclipse.core.runtime;bundle-version="[3.2.0,4.0.0)",
+ org.eclipse.swt;bundle-version="[3.3.0,4.0.0)";visibility:=reexport,
+ org.eclipse.jface;bundle-version="[3.3.0,4.0.0)";visibility:=reexport,
+ org.eclipse.ui.workbench;bundle-version="[3.3.0,4.0.0)";visibility:=reexport,
+ org.eclipse.core.expressions;bundle-version="[3.3.0,4.0.0)"
+Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: CDC-1.0/Foundation-1.0, J2SE-1.3
+\end{verbatim}
+
+Para Eclipse 3.1, el manifiesto también puede especificar un
+entorno de ejecución requerido por el bundle (bundle required
+execution environment, BREE.) Los entornos de ejecución especifican
+el mínimo entorno Java requerido por el bundle para ejecutarse. El
+compilador Java no entiende bundles ni manifiestos OSGi. El PDE
+proporciona herramientas para desarrollar bundles OSGi. Así,
+el PDE interpreta el manifiesto del bundle y genera el "classpath"
+para ese bundle. Si se especificara un entorno de ejecución
+J2SE-1.4 en el manifiesto, y entonces se escribe algún código que 
+incluye "generics", se obtendría una alerta de errores de compilación
+en el código. Esto asegura que el código se adhiere al contrato
+especificado en el manifiesto.
+
+%As of Eclipse 3.1, the manifest can also specify a bundle required
+%execution environment (BREE). Execution environments specify the
+%minimum Java environment required for the bundle to run. The Java
+%compiler does not understand bundles and OSGi manifests. PDE provides
+%tooling for developing OSGi bundles. Thus, PDE parses the bundle's
+%manifest, and generates the classpath for that bundle. If you
+%specified an execution environment of J2SE-1.4 in your manifest, and
+%then wrote some code that included generics, you would be advised of
+%compile errors in your code. This ensures that your code adheres to
+%the contract you have specified in the manifest.
+
+OSGi proporciona un framework modular para Java. El framework OSGi maneja conjuntos
+de bundles auto-descritos y administra su proceso de carga de clases (classloading.) Cada
+bundle tiene su propio classloader. La ruta de clases (classpath) disponible a un bundle
+se construye examinando las dependencias en el manifiesto y generando un classpath
+disponible para el bundle. Las aplicaciones OSGi son conjuntos de bundles. Para
+hacer uso total de la modularidad, es necesario expresar las dependencias en un
+formato robusto para los consumidores. Así el manifiesto describe paquetes exportados
+que están disponibles para clientes de este bundle, correspondiendo al API
+pública disponible para consumo. El bundle que está consumiendo esa API debe tener
+un import correspondiente del paquete que está consumiendo. El manifiesto también
+permite expresar rangos de versiones para las dependencias. Viendo el encabezado
+\code{Require-Bundle} en el manifiesto de arriba, se notará que el bundle
+\code{org.eclipse.core.runtime} del que depende \code{org.eclipse.ui} debe tener
+una versión de al menos 3.2.0, y ser menor  que 4.0.0.
+
+%OSGi provides a modularity framework for Java. The OSGi framework
+%manages collections of self-describing bundles and manages their
+%classloading. Each bundle has its own classloader. The classpath
+%available to a bundle is constructed by examining the dependencies of
+%the manifest and generating a classpath available to the bundle. OSGi
+%applications are collections of bundles. In order to fully embrace of
+%modularity, you must be able to express your dependencies in a
+%reliable format for consumers. Thus the manifest describes exported
+%packages that are available to clients of this bundle which
+%corresponds to the public API that was available for consumption.  The
+%bundle that is consuming that API must have a corresponding import of
+%the package they are consuming. The manifest also allows you to
+%express version ranges for your dependencies.  Looking at
+%the \code{Require-Bundle} heading in the above manifest, you will note
+%that the \code{org.eclipse.core.runtime} bundle that
+%\code{org.eclipse.ui} depends on must be at least 3.2.0 and less than
+%4.0.0.
+
+\aosafigure[200pt]{../images/eclipse/bundlelifecycle.eps}{Ciclo de Vida de Bundle OSGi}{fig.ecl.blc}
+
+OSGi es un framework dinámico que soporta la instalación, inicialización, detención y detención de bundles.
+Como se mencionó antes, la activación diferida (lazy activation) fue una ventaja central a Eclipse pues las
+clases de plugins no se cargaban hasta que se necesiten. El ciclo de vida del bundle OSGi también permite
+esta estrategia. Cuando se inicia una aplicación OSGi, los bundles están en estado instalado (installed.) Si sus dependencias
+son satisfechas, el bundle cambia a estado resuelto (resolved.) Una vez resuelto, las clases dentro del bundle pueden
+ser cargadas y ejecutadas. El estado ``iniciando'' (starting) significa que el bundle está siendo activado de acuerdo
+con su política de activación. Una vez activado, el bundle está en estado activo (active); éste puede adquirir recursos
+requeridos e interactuar con otros bundles. Un bundle está en estado ``deteniéndose'' (stopping) cuando está
+ejecutando su método activador stop para liberar cualquier recurso que hubiera abierto cuando estaba activo. Finalmente
+un bundle puede ser desinstalado, lo que significa que no está disponible para utilizarse.
+%OSGi is a dynamic framework which supports the installation, starting,
+%stopping, or uninstallation of bundles. As mentioned before, lazy
+%activation was a core advantage to Eclipse because plugin classes were
+%not loaded until they were needed. The OSGi bundle lifecycle also
+%enables this approach.  When you start an OSGi application, the
+%bundles are in the installed state. If its dependencies are met, the
+%bundle changes to the resolved state.  Once resolved, the classes
+%within that bundle can be loaded and run.  The starting state means
+%that the bundle is being activated according to its activation
+%policy. Once activated, the bundle is in the active state, it can
+%acquire required resources and interact with other bundles. A bundle
+%is in the stopping state when it is executing its activator stop method
+%to clean up any resources that were opened when it was active.
+%Finally, a bundle may be uninstalled, which means that it's not
+%available for use.
+
+Conforme al API evoluciona, se necesita una manera de señalar los cambios a los consumidores. Una estrategia
+es utilizar versionamiento semántico de los bundles y rangos de versiones en los manifiestos para especificar
+los rangos de versiones para las dependencias. OSGi utiliza un esquema de versionamiento por nombre de cuatro
+partes como se muestra en \aosafigref{fig.ecl.ver}.
+
+%As the API evolves, there needs to be a way to signal changes to your
+%consumers. One approach is to use semantic versioning of your bundles
+%and version ranges in your manifests to specify the version ranges for
+%your dependencies.  OSGi uses a four-part versioning naming scheme as
+%shown in \aosafigref{fig.ecl.ver}.
+
+\aosafigure[200pt]{../images/eclipse/versioning.eps}{Esquema de Versionamiento de Nombres}{fig.ecl.ver}
+%\aosafigure[200pt]{../images/eclipse/versioning.eps}{Versioning Naming Scheme}{fig.ecl.ver}
+
+Con el esquema de versionamiento numérico de OSGi, cada bundle tiene un único identificador consistiendo
+de un nombre y un número de versión de cuatro partes. Un id y versión en conjunto denotan un único
+conjunto de bytes al consumidor. Por convención de Eclipse, si se está haciendo cambios a un bundle,
+cada segmento de la versión significa para el consumidor el tipo de cambio realizado. Así, si se quiere
+indicar que se desea romper la compatibilidad del API, se incrementa el primer (major) segmento. Si sólo
+se ha incrementado el API, se incrementa el segundo (minor) segmento. Si se corrige un pequeño problema
+que no impacta el API, el tercer (service) segmento es incrementado. Finalmente, el cuarto segmento
+calificador se incrementa para indicar un id de construcción del sistema de control de versiones.
+
+%With the OSGi version numbering scheme, each bundle has a unique
+%identifier consisting of a name and a four part version number. An id
+%and version together denote a unique set of bytes to the
+%consumer. By Eclipse convention, if you're making changes to a bundle,
+%each segment of the version signifies to the consumer the type of
+%change being made. Thus, if you want to indicate that you intend to
+%break API, you increment the first (major) segment.  If you have just
+%added API, you increment the second (minor) segment. If you fix a
+%small bug that doesn't impact API, the third (service) segment is
+%incremented. Finally, the fourth or qualifier segment is incremented
+%to indicate a build id source control repository tag.
+
+Adicionalmente a expresar las dependencias fijas entre bundles, también hay un mecanismo dentro de OSGi
+llamado servicios que proporciona mayor desacoplamiento entre bundles. Los servicios son objetos con un
+conjunto de propiedades que son registradas con el registro de servicios OSGi. A diferencia de las
+extensiones, que son registradas en el registro de extensiones cuando Eclipse procesa los bundles durante
+el arranque, los servicios son registrados dinámicamente. Un bundle que está consumiendo un servicio
+necesita importar el paquete definiendo el contrato de servicio y el framework determina la implementación 
+a partir del registro de servicios.
+
+%In addition to expressing the fixed dependencies between bundles,
+%there is also a mechanism within OSGi called services which provides
+%further decoupling between bundles. Services are objects with a set of
+%properties that are registered with the OSGi service registry. Unlike
+%extensions, which are registered in the extension registry when Eclipse
+%scans bundles during startup, services are registered
+%dynamically. A bundle that is consuming a service needs to import the
+%package defining the service contract, and the framework determines
+%the service implementation from the service registry.
+
+Así como un método main en un archivo class de Java, hay una aplicación específica
+definida para iniciar Eclipse. Las aplicaciones Eclipse son definidas
+utilizando extensiones. Por ejemplo, la aplicación para iniciar el IDE Eclipse
+en sí es \code{org.eclipse.ui.ide.workbench} que está definida en el
+bundle \code{org.eclipse.ui.ide.application}.
+
+%Like a main method in a Java class file, there is a specific
+%application defined to start Eclipse. Eclipse applications are defined
+%using extensions. For instance, the application to start the Eclipse
+%IDE itself is \code{org.eclipse.ui.ide.workbench} which is defined in the
+%\code{org.eclipse.ui.ide.application} bundle.
+
+\begin{verbatim}
+<plugin>
+    <extension
+         id="org.eclipse.ui.ide.workbench"
+         point="org.eclipse.core.runtime.applications">
+      <application>
+         <run
+               class="org.eclipse.ui.internal.ide.application.IDEApplication">
+         </run>
+      </application>
+  </extension>
+</plugin>
+\end{verbatim}
+
+Hay muchas aplicaciones proporcionadas por Eclipse tales como la ejecución
+de servidores de ayuda independientes, tareas Ant y tests JUnit.
+
+%There are many applications provided by Eclipse such as those to run
+%standalone help servers, Ant tasks, and JUnit tests.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Plataforma de Cliente Enriquecido, RCP}
+
+Una de las cosas más interesantes de trabajar en una comunidad de código abierto es que la gente
+utiliza el software de modos totalmente inesperados. La motivación original de Eclipse fue
+proporcionar una plataforma y herramientas para crear y extender IDEs. Sin embargo, en el periodo
+que llevó hacia la versión 3.0, los reportes de errores revelaron que la comunidad estaba
+utilizando un subconjunto de bundles para construir aplicaciones de plataforma de cliente enriquecido
+(Rich Client Platform, RCP), lo que mucha gente conocería como aplicaciones Java. Puesto que
+Eclipse fue construido inicialmente con un un enfoque centrado en el IDE, fue necesario cierto
+refactoring de los bundles para permitir que este caso de uso sea más fácilmente adoptado por
+la comunidad de usuarios. Las aplicaciones RCP no requieren toda la funcionalidad en el IDE, por lo
+que diversos bundles fueron divididos en otros más pequeños que pudieran ser consumidos por la
+comunidad para construir aplicaciones RCP.
+
+%One of the most interesting things about working in an open source
+%community is that people use the software in totally unexpected ways.
+%The original intent of Eclipse was to provide a platform and tooling
+%to create and extend IDEs.  However, in the time leading up to the 3.0
+%release, bug reports revealed that the community was taking a subset
+%of the platform bundles and using them to build Rich Client Platform
+%(RCP) applications, which many people would recognize as Java applications.  Since Eclipse was initially constructed with an
+%IDE-centric focus, there had to be some refactoring of the bundles to
+%allow this use case to be more easily adopted by the user
+%community. RCP applications didn't require all the functionality in
+%the IDE, so several bundles were split into smaller ones that could be
+%consumed by the community for building RCP applications.  
+
+Como ejemplos de aplicaciones RCP podemos mencionar su uso para
+monitorear los robots Mars Rover desarrollado por NASA en el
+Jet Propulsion Laboratory; Bioclipse para visualización de datos
+bioinformáticos, y Dutch Railway para el monitoreo de la performance
+de los trenes. Lo común a muchas de estas aplicaciones fue que
+sus equipos decidieron que podrían tomar las utilidades proporcionadas
+por la plataforma RCP y concentrarse en construir sus herramientas
+especializadas a partir de ésta. Así pudieron ahorrar tiempo
+de desarrollo y dinero enfocándose en construir sus herramientas
+en una plataforma de API estable que garantizó que su elección
+tecnológica tendría soporte por largo tiempo.
+
+%Examples of RCP applications in the wild include the use of RCP to monitor the
+%Mars Rover robots developed by NASA at the Jet Propulsion Laboratory,
+%Bioclipse for data visualization of bioinformatics and Dutch Railway
+%for monitoring train performance.  The common thread that ran through
+%many of these applications was that these teams decided that they
+%could take the utility provided by the RCP platform and concentrate on
+%building their specialized tools on top of it. They could save
+%development time and money by focusing on building their tools on a
+%platform with a stable API that guaranteed that their technology
+%choice would have long term support.
+
+\aosafigure[300pt]{../images/eclipse/rcp.eps}{Eclipse 3.0 Architecture}{fig.ecl.rcp}
+
+Viendo la arquitectura 3.0 en \aosafigref{fig.ecl.rcp}, se podrá notar que el Runtime Eclipse
+todavía existe y proporciona el modelo de aplicación y el registro de extensiones. El modelo
+de plugin es ahora administrado por OSGi, y administra las dependencias entre componentes. Adicionalmente
+a continuar extendiendo Eclipse a sus propios IDEs, los consumidores puede construir
+a partir del framework de aplicaciones RCP para plataformas más genéricas.
+
+%Looking at the 3.0 architecture in \aosafigref{fig.ecl.rcp}, you will
+%note that the Eclipse Runtime still exists to provide the application
+%model and extension registry.  Managing the dependencies between
+%components, the plugin model is now managed by OSGi. In addition
+%to continuing to be able to extend Eclipse for their own IDEs,
+%consumers can also build upon the RCP application framework for more
+%generic applications.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Eclipse 3.4}
+
+La habilidad de actualizar fácilmente una aplicación a una nueva versión y agregar nuevo contenido
+se da por hecho. En Firefox esto ocurre sin inconvenientes. Para Eclipse esto no fue tan fácil. ``Update
+Manager'' (administrador de actualizaciones) fue el mecanismo original que se utilizó para agregar nuevo
+contenido a la instalación Eclipse o actualizarla a una nueva versión.
+
+%The ability to easily update an application to a new version and add
+%new content is taken for granted. In Firefox it happens seamlessly.
+%For Eclipse it hasn't been so easy. Update Manager was the original
+%mechanism that was used to add new content to the Eclipse install or
+%update to a new version.
+
+Para entender qué cambia durante una operación de actualización o de instalación, se necesita
+entender lo que en Eclipse se denominan ``features''. Un feature es un artefacto PDE que define un
+conjunto de bundles que están empacados juntos en un formato que puede ser construido o instalado. Los
+features también pueden incluir otros features. (Ver \aosafigref{fig.ecl.feat}.)
+%To understand what changes during an update or install operation,
+%it's necessary to understand what Eclipse means by ``features''.
+%A feature is a PDE artifact that defines a set
+%of bundles that are packaged together in a format that can be built or
+%installed. Features can also include other features. (See
+%\aosafigref{fig.ecl.feat}.)
+
+\aosafigure[250pt]{../images/eclipse/eclipse33features.eps}{Jerarquía de Features Eclipse 3.3 SDK}{fig.ecl.feat}
+
+Si se quisiera actualizar la instalación eclipse a un nuevo producto que sólo
+incorpora un nuevo bundle, el feature entero tendría que ser
+actualizado puesto que utiliza el mecanismo poco granular utilizado
+por el update manager. Actualizar un feature para corregir un solo
+bundle es ineficiente.
+
+%If you wished to update your Eclipse install to a new build that only
+%incorporated one new bundle, the entire feature had to be updated
+%since this was the coarse grained mechanism that was used by update
+%manager.  Updating a feature to fix a single bundle is inefficient.
+
+
+Existen wizards PDE para crear features y construirlas en el workspace. El archivo
+\code{feature.xml} define los bundles incluidos en el feature, y algunas propiedades
+sencillas de los bundles. Un feature, al igual que un bundle, tiene un nombre y
+una versión.  Los features pueden incluir otros features, y especificar
+rangos de versiones para los features que incluyen. Los bundles que son
+incluidos en un feature son listados, junto con propiedades específicas. Por ejemplo,
+Ud. puede ver que el fragmento \code{org.eclipse.launcher.gtk.linux.x86\_64} especifica
+el sistema operativo (\code{os}), sistema de ventanas (\code{ws}) y la
+arquitectura (\code{arch}) en el que debería ser utilizado. Así, actualizando
+a una nueva versión este fragmento sólo podría ser instalado en esta plataforma. Esos
+filtros de plataforma están incluidos en el manifiesto OSGi del bundle.
+
+%There are PDE wizards to create features, and build them in your
+%workspace.  The \code{feature.xml} file defines the bundles included
+%in the feature, and some simple properties of the bundles. A feature,
+%like a bundle, has a name and a version. Features can include other
+%features, and specify version ranges for the features they
+%include. The bundles that are included in a feature are listed, along
+%with specific properties. For instance, you can see that the
+%\code{org.eclipse.launcher.gtk.linux.x86\_64} fragment specifies the operating
+%system (\code{os}), windowing system (\code{ws}) and architecture
+%(\code{arch}) where it should be used. Thus upgrading to a new
+%release, this fragment would only be installed on this platform. These
+%platform filters are included in the OSGi manifest of this bundle.
+
+\begin{verbatim}
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.eclipse.rcp"
+      label="%featureName"
+      version="3.7.0.qualifier"
+      provider-name="%providerName"
+      plugin="org.eclipse.rcp"
+      image="eclipse_update_120.jpg">
+
+   <description>
+      %description
+   </description>
+
+   <copyright>
+      %copyright
+   </copyright>
+
+   <license url="%licenseURL">
+      %license
+   </license>
+ 
+   <plugin
+         id="org.eclipse.equinox.launcher"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.equinox.launcher.gtk.linux.x86_64"
+         os="linux"
+         ws="gtk"
+         arch="x86_64"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         fragment="true"/>
+\end{verbatim}
+
+Una aplicación Eclipse consiste de más que sólo features y bundles. Hay ejecutables
+específicos a la plataforma para iniciar Eclipse en sí mismo, archivos de licencias,
+y librerías específicas de la plataforma, como se muestra en esta lista de
+archivos incluidos en la aplicación Eclipse.
+
+%An Eclipse application consists of more than just features and
+%bundles.  There are platform specific executables to start Eclipse
+%itself, license files, and platform specific libraries, as shown in
+%this list of files included in the Eclipse application.
+
+\begin{verbatim}
+com.ibm.icu
+org.eclipse.core.commands
+org.eclipse.core.conttenttype
+org.eclipse.core.databinding
+org.eclipse.core.databinding.beans
+org.eclipse.core.expressions
+org.eclipse.core.jobs
+org.eclipse.core.runtime
+org.eclipse.core.runtime.compatibility.auth
+org.eclipse.equinox.common
+org.eclipse.equinox.launcher
+org.eclipse.equinox.launcher.carbon.macosx
+org.eclipse.equinox.launcher.gtk.linux.ppc
+org.eclipse.equinox.launcher.gtk.linux.s390
+org.eclipse.equinox.launcher.gtk.linux.s390x
+org.eclipse.equinox.launcher.gtk.linux.x86
+org.eclipse.equinox.launcher.gtk.linux.x86_64
+\end{verbatim}
+
+%\aosafigureTop[200pt]{../images/eclipse/rcpfeature33.eps}{Archivos incluidos en una aplicación Eclipse}{fig.ecl.inst}
+
+Esos archivos no podrían ser actualizados mediante el update manager, puesto que una vez más,
+éste sólo opera con features. Dado que muchos de esos archivos fueron actualizados en cada
+versión principal (major release), esto significó que los usuarios tenían que descargar un nuevo
+zip cada vez que hubiera una nueva versión en lugar de actualizar su instalación existente. Esto
+no era aceptable para la comunidad Eclipse. PDE proporcionó soporte para archivos de productos, los
+que especificaron todos los archivos necesarios para construir una aplicación Eclipse RCP. Sin embargo,
+update manager no tenía un mecanismo de provisionamiento con tales archivos en la instalación, lo cual
+era muy frustrante para los usuarios y desarrolladores de productos. En Marzo de 2008, p2 fue
+distribuido en el SDK como la nueva solución de provisionamiento. Por mantener la compatibilidad,
+Update Manager todavía estaba disponible para su uso, pero p2 estaba habilitado por omisión.
+
+%These files couldn't be updated via
+%update manager, because again, it only dealt with features.
+%Since many of these files were updated every major release, this meant
+%that users had to download a new zip each time there was a new release
+%instead of updating their existing install. This wasn't acceptable to
+%the Eclipse community. PDE provided support for product files, which
+%specified all the files needed to build an Eclipse RCP
+%application. However, update manager didn't have a mechanism to
+%provision these files into your install which was very frustrating for
+%users and product developers alike. In March 2008, p2 was released
+%into the SDK as the new provisioning solution.  In the interest of
+%backward compatibility, Update Manager was still available for use,
+%but p2 was enabled by default.
+
+\begin{aosasect2}{p2 Concepts}
+%\begin{aosasect2}{p2 Concepts}
+
+Hablar de Equinox p2 es hablar de las unidades de instalación (installation units, IU.) Una IU
+es una descripción del nombre e id de el artefacto que se está instalando. Esta metadata
+también describe lo que proporciona el artefacto (capabilities o capacidades) y sus requerimientos
+(dependencias.) La metadata también describe filtros de aplicabilidad para un artefacto que
+sólo es aplicable a cierto entorno. Por ejemplo, el fragmento org.eclipse.swt.gtk.linux.x86 sólo
+es aplicable si se está instalando en un computador x86 con Linux gtk. Fundamentalmente,
+la metadata es una expresión de la información presente en el manifiesto del bundle. Los
+artefactos son simplemente los bits binarios que están siendo instalados. Una separación de aspectos
+se consigue al separar la metadata y los artefactos que describen. Un repositorio p2 consiste
+tanto de repositorios de metadata y de artefactos.
+
+%Equinox p2 is all about installation units (IU). An IU is a
+%description of the name and id of the artifact you are
+%installing. This metadata also describes the capabilities of the
+%artifact (what is provided) and its requirements (its
+%dependencies). Metadata can also express applicability filters if an
+%artifact is only applicable to a certain environment. For instance,
+%the org.eclipse.swt.gtk.linux.x86 fragment is only applicable if
+%you're installing on a Linux gtk x86 machine. Fundamentally, metadata
+%is an expression of the information in the bundle's
+%manifest. Artifacts are simply the binary bits being installed. A
+%separation of concerns is achieved by separating the metadata and the
+%artifacts that they describe. A p2 repository consists of both
+%metadata and artifact repositories.
+
+\aosafigure{../images/eclipse/p2.eps}{Conceptos en P2}{fig.ecl.p2}
+%\aosafigure{../images/eclipse/p2.eps}{P2 Concepts}{fig.ecl.p2}
+
+Un perfil es una lista de IUs en una instalación. Por ejemplo, su
+SDK Eclipse tiene un perfil que describe su instalación actual. Desde
+el mismo Eclipse, Ud. puede solicitar una actualización a una nueva
+versión del software construido, lo que creará un nuevo perfil con
+un conjunto diferente de IUs. Un perfil también proporciona una lista de
+propiedades asociadas con la instalación, tal como el sistema operativo,
+el sistema de ventanas, y parámetros de la arquitectura. Los perfiles también
+almacenan el directorio de instalación y la ubicación. Los perfiles se
+mantienen en un registro de perfiles, el cual puede almacenar múltiples
+perfiles. El director es responsable de invocar operaciones de provisionamiento.
+Trabaja en conjunto con el planificador y el motor. El planificador examina
+el perfil existente, y determina las operaciones que deben ocurrir
+para transformar a la instalación a su nuevo estado. El motor es
+responsable de llevar a cabo las operaciones de provisionamiento e instalar
+nuevos artefactos en disco. Los puntos de contacto (touchpoints) son parte
+del motor que trabaja con la implementación runtime del sistema siendo
+instalado. Por ejemplo, para el SDK Eclipse, hay un Eclipse touchpoint
+que sabe cómo instalar bundles. Para un sistema Linux donde Eclipse es instalado
+desde binarios RPM, el motor trataría con un touchpoint RPM. Adicionalmente, p2
+puede llevar a cabo instalaciones in-process (en el proceso en curso) o
+exteriormente en un proceso separado, como una construcción de software.
+
+%A profile is a list of IUs in your install. For instance, your Eclipse
+%SDK has a profile that describes your current install. From within
+%Eclipse, you can request an update to a newer version of the build
+%which will create a new profile with a different set of IUs. A profile
+%also provides a list of properties associated with the installation,
+%such as the operating system, windowing system, and architecture
+%parameters. Profiles also store the installation directory and the
+%location. Profiles are held by a profile registry, which can store
+%multiple profiles. The director is responsible for invoking
+%provisioning operations. It works with the planner and the engine. The
+%planner examines the existing profile, and determines the operations
+%that must occur to transform the install into its new state. The
+%engine is responsible for carrying out the actual provisioning
+%operations and installing the new artifacts on disk.  Touchpoints are
+%part of the engine that work with the runtime implementation of the
+%system being installed. For instance, for the Eclipse SDK, there is an
+%Eclipse touchpoint which knows how to install bundles. For a Linux
+%system where Eclipse is installed from RPM binaries, the engine would
+%deal with an RPM touchpoint. Also, p2 can perform installs in-process
+%or outside in a separate process, such as a build.
+
+Hubo muchos beneficios con el nuevo sistema de provisionamiento
+p2. Los artefactos de instalación de Eclipse pudieron ser actualizados
+de versión a versión. En tanto los perfiles anteriores fueron almacenados
+en disco, hubo una manera de revertir a una instalación previa de Eclipse.
+Adicionalmente, dado un perfil y un repositorio, se pudo recrear la
+instalación Eclipse de un usuario que estaba reportando un error
+para tratar de reproducirlo en otro computador. El provisionamiento
+con p2 proporcionó una manera de actualizar e instalar más que
+sólo el SDK Eclipse; fue una plataforma que también aplicaba a los casos
+de uso RCP y OSGi. El equipo Equinox también trabajó con miembros
+de otro proyecto Eclipse, el Eclipse Communication Framework (ECF)
+para proporcionar comunicación robusta para el consumo de artefactos
+y metadata en los repositorios p2.
+%There were many benefits to the new p2 provisioning system. Eclipse
+%install artifacts could be updated from release to release. Since
+%previous profiles were stored on disk, there was also a way to revert
+%to a previous Eclipse install. Additionally, given a profile and a
+%repository, you could recreate the Eclipse install of a user that was
+%reporting a bug to try to reproduce the problem on your own desktop.
+%Provisioning with p2 provided a way to update and install more than
+%just the Eclipse SDK, it was a platform that applied to RCP and OSGi
+%use cases as well.  The Equinox team also worked with the members of
+%another Eclipse project, the Eclipse Communication Framework (ECF) to
+%provide reliable transport for consuming artifacts and metadata in p2
+%repositories.
+
+Hubieron muchas discusiones emotivas dentro de la comunidad Eclipse cuando se
+lanzó p2 en el SDK\@. Puesto que el "update manager" era una solución
+poco óptima para el provisionamiento de la instalación Eclipse, los
+consumidores de Eclipse tenían el hábito de descomprimir bundles
+en su instalación y reiniciar Eclipse. Esta estrategia resuelve
+los bundles sobre la base del mejor esfuerzo. Esto también significa
+que cualquier conflicto en la instalación es resuelto en tiempo de
+ejecución, no en la fase de instalación. Los requerimientos y dependencias
+deberían ser resueltos en la fase de instalación, no de ejecución. Sin
+embargo, los usuarios fueron con frecuencia pasaron por alto estos asuntos
+y asumieron que al existir los bundles en el disco, debían estar funcionando.
+Anteriormente, los sitios de actualización que proporcionaba Eclipse eran
+un directorio simple consistiendo de bundles en JARs y features. Un
+simple archivo \code{site.xml} proporcionaba los nombres de los
+features que se podían consumir desde el sitio. Con el advenimiento
+de p2, la metadata proporcionada en los repositorios p2 se tornó mucho
+más compleja. Para crear metadata, el proceso de construcción necesitó
+ser alterado para generar metadata ya sea al construir o ejecutar
+una tarea de generación sobre los bundles existentes. Inicialmente
+faltaba documentación describiendo cómo hacer esos cambios. Como siempre,
+el exponer nueva tecnología a una audiencia mayor, mostró errores
+inesperados que tuvieron que ser atendidos. Sin embargo, escribiendo
+más documentación y trabajando largas horas resolviendo estos errores, el 
+equipo Equinox pudo absolver estos problemas y ahora p2 es el
+motor de provisionamiento sobre el que se basan muchos productos comerciales.
+
+%There were many spirited discussions within the Eclipse community when p2
+%was released into the SDK\@. Since update manager was a less than
+%optimal solution for provisioning your Eclipse install, Eclipse
+%consumers had the habit of unzipping bundles into their install and
+%restarting Eclipse. This approach resolves your bundles on a best
+%effort basis. It also meant that any conflicts in your install were
+%being resolved at runtime, not install time.  Constraints should be
+%resolved at install time, not run time. However, users were often
+%oblivious to these issues and assumed since the bundles existed on
+%disk, they were working.  Previously, the update sites that Eclipse
+%provided were a simple directory consisting of JARred bundles and
+%features.  A simple \code{site.xml} file provided the names of the
+%features that were available to be consumed in the site.  With the
+%advent of p2, the metadata that was provided in the p2 repositories
+%was much more complex. To create metadata, the build process needed to
+%be tweaked to either generate metadata at build time or run a
+%generator task over the existing bundles. Initially, there was a lack
+%of documentation available describing how to make these changes.  As
+%well, as is always the case, exposing new technology to a wider
+%audience exposed unexpected bugs that had to be addressed. However, by
+%writing more documentation and working long hours to address these
+%bugs, the Equinox team was able to address these concerns and now p2
+%is the underlying provision engine behind many commercial
+%offerings. As well, the Eclipse Foundation ships its coordinated
+%release every year using a p2 aggregate repository of all the
+%contributing projects.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Eclipse 4.0}
+
+La arquitectura debe ser continuamente examinada para evaluar si todavía
+es apropiada. Es capaz de incorporar nueva tecnología? promueve el
+crecimiento de la comunidad? es fácil atraer nuevas contribuciones?
+Al final de 2007, los confirmadores del proyecto Eclipse decidieron
+que las respuestas a estas interrogantes eran NO, y se embarcaron
+el el diseño de una nueva versión de Eclipse. Al mismo tiempo,
+ellos fueron conscientes de que habían miles de aplicaciones Eclipse
+que dependían del API\@ existente. Se creó un proyecto tecnológico
+de incubación a fines de 2008 con tres metas específicas: simplificar
+el modelo de programación de Eclipse, atraer a nuevos confirmadores,
+y permitir que la plataforma aproveche las nuevas tecnologías
+basadas-en-web manteniendo una arquitectura abierta.
+
+%Architecture must continually be examined to evaluate if it is still
+%appropriate. Is it able to incorporate new technology? Does it
+%encourage growth of the community?  Is it easy to attract new
+%contributors?  In late 2007, the Eclipse project committers decided
+%that the answers to these questions were no and they embarked on
+%designing a new vision for Eclipse. At the same time, they realized
+%that there were thousands of Eclipse applications that depended on the
+%existing API\@.  An incubator technology project was created in late
+%2008 with three specific goals: simplify the Eclipse programming
+%model, attract new committers and enable the platform to take
+%advantage of new web-based technologies while providing an open
+%architecture.
+
+\aosafigure{../images/eclipse/e4.eps}{Eclipse 4.0 SDK Early Adopter Release}{fig.ecl.e4}
+
+Eclipse 4.0 fue lanzado por primera vez en Julio de 2010 para
+que los "early adopters" (personas que utilizan software en sus
+fases más tempranas) puedan proporcionar sus impresiones. Este
+consistió de una combinación de bundles del SDK que fueron parte
+de la versión 3.6, y nuevos bundles proporcionados por el
+proyecto tecnológico 4.0. Al igual que en 3.0, hubo una capa de
+compatibilidad para que los bundles existentes pudieran trabajar
+con cada nuevo lanzamiento. Como siempre, había el problema de la
+necesidad de los consumidores de utilizar el API pública a fin
+de asegurar tal compatibilidad. No había tal garantía si el bundle
+utilizaba código interno. La versión 4.0 proporcionó la
+plataforma de aplicación Eclipse 4 (Eclipse 4 Application Platform) con
+las siguientes características.
+
+%Eclipse 4.0 was first released in July 2010 for early adopters to
+%provide feedback. It consisted of a combination of SDK bundles that
+%were part of the 3.6 release, and new bundles that graduated from the
+%technology project.  Like 3.0, there was a compatibility layer so that
+%existing bundles could work with the new release. As always, there was
+%the caveat that consumers needed to be using the public API in order
+%to be assured of that compatibility.  There was no such guarantee if
+%your bundle used internal code. The 4.0 release provided the Eclipse 4
+%Application Platform which provided the following features.
+
+\begin{aosasect2}{Model Workbench}
+
+En 4.0, un model workbench (espacio de trabajo de modelamiento) se genera
+utilizando el framework de modelamiento Eclipse (Eclipse Modeling Framework, EMFgc.)
+Hay una separación de ámbitos entre el modelo y la impresión de la vista,
+puesto que el renderer (componente que se encarga de materializar la vista) conversa
+con el modelo y entonces genera el código SWT. Por omisión se utilizan los
+renderers SWT, pero son posibles otras soluciones. Si Ud. crea una aplicación
+4.x de ejemplo, un archivo XMI será creado para el model workbench por omisión. El
+modelo puede ser modificado y el workbench será instantáneamente actualizado
+para reflejar los cambios en el modelo. \aosafigref{fig.ecl.mwb} es un
+ejemplo de un modelo generado para una aplicación de ejemplo 4.x.
+
+%In 4.0, a model workbench is generated using the Eclipse Modeling
+%Framework (EMFgc). There is a separation of concerns between the model
+%and the rendering of the view, since the renderer talks to the model
+%and then generates the SWT code. The default is to use the SWT
+%renderers, but other solutions are possible.  If you create an example
+%4.x application, an XMI file will be created for the default workbench
+%model. The model can be modified and the workbench will be instantly
+%updated to reflect the changes in the model. \aosafigref{fig.ecl.mwb}
+%is an example of a model generated for an example 4.x application.
+
+\aosafigure[350pt]{../images/eclipse/modelledworkbench.pdf}{Modelo Generado para Aplicación de ejemplo 4.x}{fig.ecl.mwb}
+
+\end{aosasect2}
+
+\begin{aosasect2}{Estilos: Cascading Style Sheets}
+
+Eclipse fue lanzado el 2001, antes de la era de aplicaciones
+Internet de apariencia enriquecida que pudiera ser maquillada
+vía CSS para proporcionar una vista distinta. Eclipse 4.0 proporciona
+la habilidad de utilizar estilos (stylesheets) para cambiar fácilmente
+la apariencia de la aplicación Eclipse. Los estilos por omisión
+pueden encontrarse en la carpeta \code{css} del componente (bundle)
+\code{org.eclipse.platform}.
+
+%Eclipse was released in 2001, before the era of rich Internet
+%applications that could be skinned via CSS to provide a different look
+%and feel. Eclipse 4.0 provides the ability to use stylesheets to
+%easily change the look and feel of the Eclipse application. The
+%default CSS stylesheets can be found in the \code{css} folder of the
+%\code{org.eclipse.platform} bundle.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Inyección de Dependencias}
+
+Tanto el registro de extensiones de Eclipse como los servicios OSGi son
+ejemplos de modelos de programación de servicios. Convencionalmente, un
+modelo de programación de servicios contiene productores de servicios
+y consumidores. El bróker (intermediario) es responsable por
+administrar la relación entre productores y consumidores.
+
+%Both the Eclipse extensions registry and OSGi services are examples of service
+%programming models. By convention, a service programming model contains service
+%producers and consumers. The broker is responsible for managing the
+%relationship between producers and consumers.
+
+\aosafigure[200pt]{../images/eclipse/producerconsumer.eps}{Relación entre Productores y Consumidores}{fig.ecl.prc}
+
+\pagebreak
+
+Tradicionalmente, en aplicaciones de Eclipse 3.4.x, el consumidor
+necesitaba conocer la localización de la implementación, así como
+entender la herencia dentro del framework para consumir servicios. El código
+consumidor por lo tanto era menos reutilizable porque las personas no podían
+reemplazar la implementación que el consumidor recibía. Por ejemplo,
+si se deseaba actualizar el mensaje en la línea de estado
+en Eclipse 3.x, el código luciría así:
+
+%Traditionally, in Eclipse 3.4.x applications, the consumer needed
+%to know the location of the implementation, and to
+%understand inheritance within the framework to
+%consume services. The consumer code was therefore less reusable
+%because people couldn't override which implementation the consumer
+%receives. For example, if you wanted to update the message on the
+%status line in Eclipse 3.x, the code would look like:
+
+\begin{verbatim}
+getViewSite().getActionBars().getStatusLineManager().setMessage(msg);
+\end{verbatim}
+
+Eclipse 3.6 se construye a partir de componentes, pero muchos de esos
+componentes están muy acoplados. Para ensamblar aplicaciones de
+componentes menos acoplados, Eclipse 4.0 utiliza inyección de
+dependencias para proporcionar servicios a los clientes. La inyección
+de dependencias en Eclipse 4.x se realiza mediante un framework
+personalizado que utiliza el concepto de contexto, el cual sirve
+como un mecanismo genérico para localizar servicios para los
+consumidores. El contexto existe entre la aplicación y el framework.
+Los contextos son jerárquicos. Si un contexto recibe una solicitud
+que no puede satisfacer, la delegará al contexto padre. El contexto
+eclipse, llamado \code{IEclipseContext}, almacena los servicios
+disponibles y proporciona la búsqueda de servicios OSGi. Básicamente, 
+el contexto es similar a un mapa Java en que proporciona un mapeo
+de un nombre o clase a un objeto. El contexto se mantiene elementos
+de modelo y servicios. Cada elemento de el modelo tendrá un contexto.
+Los servicios se publican en Eclipse 4.x mediante el mecanismo de
+servicios OSGi.
+
+%Eclipse 3.6 is built from components, but many of these components are
+%too tightly coupled. To assemble applications of more loosely coupled
+%components, Eclipse 4.0 uses dependency injection to provide services
+%to clients. Dependency injection in Eclipse 4.x is through the use of
+%a custom framework that uses the the concept of a context that serves
+%as a generic mechanism to locate services for consumers.  The context
+%exists between the application and the framework. Contexts are
+%hierarchical. If a context has a request that cannot be satisfied,
+%it will delegate the request to the parent context. The Eclipse
+%context, called \code{IEclipseContext}, stores the available services and
+%provides OSGi services lookup.  Basically, the context is similar to a
+%Java map in that it provides a mapping of a name or class to an
+%object.  The context handles model elements and services.  Every
+%element of the model, will have a context. Services are published in
+%4.x by means of the OSGi service mechanism.
+
+\aosafigure[200pt]{../images/eclipse/context.eps}{Service Broker Context}{fig.ecl.con}
+
+Los productores agregan servicios y objetos al contexto que los almacena.
+Los servicios son inyectados en los objetos consumidores por el contexto.
+El consumidor declara lo que quiere, y el contexto determina cómo
+satisfacer el requerimiento. Esta estrategia ha hecho sencillo el
+consumir servicios dinámicamente. En Eclipse 3.x, un consumidor tenía
+que asociar "listeners" a ser notificados cuando los servicios
+estén disponibles o no disponibles. Con Eclipse 4.x, una vez que el
+contexto ha sido inyectado en un objeto consumidor, cualquier cambio
+es automáticamente enviado al objeto otra vez. En otras palabras,
+la inyección de dependencias ocurre otra vez. El consumidor indica
+que utilizará el contexto mediante el uso de anotaciones
+Java 5 que se adhieren al estándar JSR 330, tal como \code{@inject},
+así como otras anotaciones específicas de Eclipse. Se soporta
+la inyección por constructor, método y atributo. En tiempo
+de ejecución, Eclipse 4.x analiza los objetos a la búsqueda de
+esas anotaciones. La acción llevada a cabo depende de la
+anotación encontrada.
+
+%Producers add services and objects to the context which stores them.
+%Services are injected into consumer objects by the context. The
+%consumer declares what it wants, and the context determines how to
+%satisfy this request. This approach has made consuming dynamic service
+%easier. In Eclipse 3.x, a consumer had to attach listeners to be
+%notified when services were available or unavailable. With Eclipse
+%4.x, once a context has been injected into a consumer object, any
+%change is automatically delivered to that object again. In other
+%words, dependency injection occurs again. The consumer indicates that
+%it will use the context by the use of Java 5 annotations which adhere
+%to the JSR~330 standard, such as \code{@inject}, as well as some
+%custom Eclipse annotations. Constructor, method, and field injection
+%are supported.  The 4.x runtime scans the objects for these
+%annotations. The action that is performed depends on the annotation
+%that's found.
+
+Esta separación de aspectos entre el contexto y la aplicación
+permite una mejor reutilización de los componentes, y libera al
+consumidor de comprender la implementación. En 4.x el código para
+actualizar la línea de estado luce como esto:
+
+%This separation of concerns between context and application allows for
+%better reuse of components, and absolves the consumer from
+%understanding the implementation.  In 4.x, the code to update the
+%status line would look like this:
+
+\begin{verbatim}
+@Inject
+IStatusLineManager statusLine;
+...
+statusLine.setMessage(msg);
+\end{verbatim}
+
+\end{aosasect2}
+
+\begin{aosasect2}{Servicios de Aplicación}
+
+Uno de los objetivos principales en Eclipse 4.0 fue simplificar
+el API para consumidores de modo tal que sea fácil implementar
+servicios comunes. La lista de servicios simples vino a ser
+conocida como ``the twenty things'' (las veinte cosas) y
+se conocen como los Eclipse Application services (Servicios de 
+Aplicación.) El objetivo
+es ofrecer APIs independientes que los clientes pueden utilizar
+sin tener que tener un conocimiento profundo de todas las APIs
+disponibles. Son estructuradas como servicios individuales
+tal que pueden ser utilizadas también en otros lenguajes además
+de Java, tales como Javascript. Por ejemplo, hay un API
+para acceder el modelo de aplicación, para leer y modificar preferencias
+y reportar errores y alertas.
+
+%One of the main goals in Eclipse 4.0 was to simplify the API for
+%consumers so that it was easy to implement common services. The list
+%of simple services came to be known as ``the twenty things'' and are
+%known as the Eclipse Application services. The goal is to offer
+%standalone APIs that clients can use without having to have a deep
+%understanding of all the APIs available. They are structured as
+%individual services so that they can also be used in other languages
+%other than Java, such as Javascript.  For example, there is an API to
+%access the application model, to read and modify preferences and
+%report errors and warnings.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+\begin{aosasect1}{Conclusión}
+
+La arquitectura basada en componentes de Eclipse ha evolucionado
+para incorporar nueva tecnología a la vez que manteniendo
+compatibilidad hacia atrás. Esto ha sido costoso, pero la
+recompensa es el crecimiento de la comunidad Eclipse debido a
+la confianza establecida en que los consumidores pueden
+continuar entregando productos basados en un API estable.
+
+%The component-based architecture of Eclipse has evolved to incorporate
+%new technology while maintaining backward compatibility.  This has
+%been costly, but the reward is the growth of the Eclipse community
+%because of the trust established that consumers can continue to ship
+%products based on a stable API.
+
+Eclipse tiene muchos consumidores con diversos casos de uso por lo que
+nuestro expansivo API resulta difícil de adoptar y entender para
+nuevos consumidores. En retrospectiva, debimos mantener nuestro API
+más simple. Si 80\% de los consumidores sólo usan el 20\% del API,
+entonces hay una necesidad de simplificación lo que fue una de
+las razones por la que se creó el canal Eclipse 4.x.
+
+%Eclipse has so many consumers with diverse use cases and our expansive
+%API became difficult for new consumers to adopt and understand. In
+%retrospect, we should have kept our API simpler. If 80\% of consumers
+%only use 20\% of the API, there is a need for simplification which was
+%one of the reasons that the Eclipse 4.x stream was created.
+
+La sabiduría de las masas revela casos de uso interesantes, tales como
+desagregar el IDE en componentes (bundles) que pueden ser utilizados
+para construir aplicaciones RCP. Inversamente, las masas
+con frecuencia generan mucho ruido con requerimientos para
+casos de uso extremo que toman una tiempo significativo en su 
+implementación.
+
+%The wisdom of crowds does reveal interesting use cases, such as
+%disaggregating the IDE into bundles that could be used to construct
+%RCP applications.  Conversely, crowds often generate a lot of noise
+%with requests for edge case scenarios that take a significant amount
+%of time to implement.
+
+En los días iniciales del proyecto Eclipse, los confirmadores se dieron el
+lujo de dedicar un tiempo significativo a la documentación, ejemplos
+y responde preguntas de la comunidad. A través del tiempo esta
+responsabilidad se desplazó a la comunidad Eclipse como un todo. Podría
+haber sido mejor proporcionar documentación y casos de uso para
+ayudar a la comunidad, pero esto ha sido difícil dada la gran
+cantidad de ítems planificados para cada versión. A diferencia
+de las esperadas postergaciones en las fechas de lanzamiento del
+software, en Eclipse hemos entregado nuestras versiones
+consistentemente a tiempo, lo que permite a nuestros consumidores
+confiar en que podrán hacer lo mismo.
+
+%In the early days of the Eclipse project, committers had the luxury of
+%dedicating significant amounts of time to documentation, examples and
+%answering community questions. Over time, this responsibility has
+%shifted to the Eclipse community as a whole.  We could have been
+%better at providing documentation and use cases to help out the
+%community, but this has been difficult given the large number of items
+%planned for every release.  Contrary to the expectation that software
+%release dates slip, at Eclipse we consistently deliver our releases on
+%time which allows our consumers to trust that they will be able to do
+%the same.
+
+Mediante la adopción de nueva tecnología, y reinventando cómo luce y
+opera Eclipse, nosotros mantenemos la comunicación con nuestros
+consumidores, manteniéndolos unidos en la comunidad. Si estás interesado(a)
+en participar de Eclipse, por favor visita http://www.eclipse.org.
+
+%By adopting new technology, and reinventing how Eclipse looks and
+%works, we continue the conversation with our consumers and keep
+%them engaged in the community. If you're interested in becoming
+%involved with Eclipse, please visit http://www.eclipse.org.
+\end{aosasect1}
+
+\end{aosachapter}

@@ -1,0 +1,20 @@
+Instrucciones:
+
+1) Guardar el archivo con encoding ISO8859-1[5].
+2) Revisar faltas de ortografías con el comando 
+
+$> aspell -c --mode=tex --dont-tex-check-comments -l es --encoding=iso8859-1 ~/Downloads/snowflock.tex
+
+3) Términos técnicos que no puedan encontrarle alguna traducción adecuada (o que sea extraña o ambigua) agregarlos a la lista para posterior consulta y evaluación
+
+4) Compilar el libro usando el comando (algunas dependendias son necesarias)
+$> cd volume1/tex/es/
+$> pdflatex aosa.tex
+
+
+English                                     Español
+----------------------------------------    -------------------------------------------------------
+click                                       clic (de acuerdo a la RAE)
+commit (v)                                  hacer commit
+disk seek rate                              tasa de búsqueda de disco
+paper                                       publicación
