@@ -2,35 +2,64 @@
 
 \begin{aosasect1}{Introduction}
 
-There are two schools of thought when it comes to installing
-applications.  The first, common to Windows and Mac OS X, is that
-applications should be self-contained, and their installation should
-not depend on anything else.  This philosophy simplifies the
-management of applications: each application is its own standalone
-``appliance'', and installing and removing them should not disturb the
-rest of the OS\@.  If the application needs an uncommon library, that
-library is included in the application's distribution.
+Hay dos escuelas de pensamiento cuando se trata de la instalación de aplicaciones.  
+La primera, común en Windows y Mac OS X, es que las aplicaciones deben ser 
+auto-contenidas(TODO), y su instalación no debería depender de nada más.  Esta 
+filosofía simplifica la gestión de applicaciones: cada aplicación es un ``dispositivo''
+independiente (REVIEW), su instalación y eliminación no debería perturbar al resto del 
+sistema operativo\@.  Si la aplicación necesita una librería no común, esa librería
+debería estar contenida en la distribución de la aplicación.
 
-The second school, which is the norm for Linux-based systems, treats
-software as a collection of small self-contained units called
-\emph{packages}. Libraries are bundled into packages, any given
-library package might depend on other packages.
-Installing an application might involve finding and installing
-particular versions of dozens of other libraries.  These dependencies
-are usually fetched from a central repository that contains thousands
-of packages.  This philosophy is why Linux distributions use complex
-package management systems like \code{dpkg} and \code{RPM} to track
-dependencies and prevent installation of two applications that use
-incompatible versions of the same library.
+% There are two schools of thought when it comes to installing
+% applications.  The first, common to Windows and Mac OS X, is that
+% applications should be self-contained, and their installation should
+% not depend on anything else.  This philosophy simplifies the
+% management of applications: each application is its own standalone
+% ``appliance'', and installing and removing them should not disturb the
+% rest of the OS\@.  If the application needs an uncommon library, that
+% library is included in the application's distribution.
 
-There are pros and cons to each approach.  Having a highly modular
-system where every piece can be updated or replaced makes management
-easier, because each library is present in a single place, and all
-applications that use it benefit when it is updated.  For instance, a
-security fix in a particular library will reach all applications that
-use it at once, whereas if an application ships with its own library,
-that security fix will be more complex to deploy, especially if
-different applications use different versions of the library.
+La segunda escuela, que es la norma para los sistemas basados​en Linux, trata
+al software(TODO) como una colección de pequeñas unidades independientes llamadas
+\emph{paquetes}. Las librerías están agrupadas en paquetes, cualquier paquete de 
+librerías podría depender de otros paquetes.
+La instalación de una aplicación podría implicar la búsqueda y la instalación de docenas
+de versiones particulares de otras librerías.  Estas dependencias generalmente se
+obtienen de un repositorio central que contiene miles de paquetes.  Esta filosofía,
+es la razón por la cual distribuciones de Linux utilizan complejos sistemas de gestión
+de paquetes como \code{dpkg} y \code{RPM} para realizar el seguimiento de las
+dependencias y evitar la instalación de dos aplicaciones que utilicen versiones
+incompatibles de la misma librería.
+
+% The second school, which is the norm for Linux-based systems, treats
+% software as a collection of small self-contained units called
+% \emph{packages}. Libraries are bundled into packages, any given
+% library package might depend on other packages.
+% Installing an application might involve finding and installing
+% particular versions of dozens of other libraries.  These dependencies
+% are usually fetched from a central repository that contains thousands
+% of packages.  This philosophy is why Linux distributions use complex
+% package management systems like \code{dpkg} and \code{RPM} to track
+% dependencies and prevent installation of two applications that use
+% incompatible versions of the same library.
+
+Hay pros y los contras de cada enfoque.  Tener un sistema altamente modular donde cada
+pieza puede ser actualizada o reemplazada hace que la gestión más fácil, ya que cada
+librería está presente en un solo lugar, y todas las aplicaciones que la utilizan se
+benificiarán cuando es actualiza.  Por ejemplo, una revisión de seguridad en una
+biblioteca en particular llegará a todas las aplicaciones que la utilizan a la vez, 
+mientras que si una aplicación distribuye su propia librería, esa revisión de seguridad
+será más compleja de implementar, especialmente si las distintas aplicaciones utilizan
+diferentes versiones de la librería.
+
+% There are pros and cons to each approach.  Having a highly modular
+% system where every piece can be updated or replaced makes management
+% easier, because each library is present in a single place, and all
+% applications that use it benefit when it is updated.  For instance, a
+% security fix in a particular library will reach all applications that
+% use it at once, whereas if an application ships with its own library,
+% that security fix will be more complex to deploy, especially if
+% different applications use different versions of the library.
 
 But that modularity is seen as a drawback by some developers, because
 they're not in control of their applications and dependencies.  It is
