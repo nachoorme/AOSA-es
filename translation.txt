@@ -20,7 +20,7 @@ llvm.tex
 makingsoftware.tex  Diego Bravo                               100
 mercurial.tex       Sebastian Kreft                            53
 nosql.tex                                                       
-packaging.tex                                                   
+packaging.tex       Daniel Pérez Rada                           ?                  
 riak.tex
 selenium.tex        Juan Carlos Vergara                         ?
 sendmail.tex
