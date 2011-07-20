@@ -1,14 +1,15 @@
 \begin{aosachapter}{Python Packaging}{s:packaging}{Tarek Ziad\'{e}}
 
-\begin{aosasect1}{Introduction}
+\begin{aosasect1}{Introducción}
+%\begin{aosasect1}{Introduction}
 
-Hay dos escuelas de pensamiento cuando se trata de la instalaciÃ³n de aplicaciones.  
-La primera, comÃºn en Windows y Mac OS X, es que las aplicaciones deben ser 
-auto-contenidas(TODO), y su instalaciÃ³n no deberÃ­a depender de nada mÃ¡s.  Esta 
-filosofÃ­a simplifica la gestiÃ³n de applicaciones: cada aplicaciÃ³n es un ``dispositivo''
-independiente (REVIEW), su instalaciÃ³n y eliminaciÃ³n no deberÃ­a perturbar al resto del 
-sistema operativo\@.  Si la aplicaciÃ³n necesita una librerÃ­a no comÃºn, esa librerÃ­a
-deberÃ­a estar contenida en la distribuciÃ³n de la aplicaciÃ³n.
+Hay dos escuelas de pensamiento cuando se trata de la instalación de aplicaciones.  
+La primera, común en Windows y Mac OS X, es que las aplicaciones deben ser 
+auto-contenidas(TODO), y su instalación no debería depender de nada más.  Esta 
+filosofía simplifica la gestión de aplicaciones: cada aplicación es un ``dispositivo''
+independiente (REVIEW), su instalación y eliminación no debería perturbar al resto del 
+sistema operativo\@.  Si la aplicación necesita una librería no común, esa librería
+debería estar contenida en la distribución de la aplicación.
 
 % There are two schools of thought when it comes to installing
 % applications.  The first, common to Windows and Mac OS X, is that
@@ -19,17 +20,17 @@ deberÃ­a estar contenida en la distribuciÃ³n de la aplicaciÃ³n.
 % rest of the OS\@.  If the application needs an uncommon library, that
 % library is included in the application's distribution.
 
-La segunda escuela, que es la norma para los sistemas basadosâ€‹en Linux, trata
-al software(TODO) como una colecciÃ³n de pequeÃ±as unidades independientes llamadas
-\emph{paquetes}. Las librerÃ­as estÃ¡n agrupadas en paquetes, cualquier paquete de 
-librerÃ­as podrÃ­a depender de otros paquetes.
-La instalaciÃ³n de una aplicaciÃ³n podrÃ­a implicar la bÃºsqueda y la instalaciÃ³n de docenas
-de versiones particulares de otras librerÃ­as.  Estas dependencias generalmente se
-obtienen de un repositorio central que contiene miles de paquetes.  Esta filosofÃ­a,
-es la razÃ³n por la cual distribuciones de Linux utilizan complejos sistemas de gestiÃ³n
+La segunda escuela, que es la norma para los sistemas basados en Linux, trata
+al software(TODO) como una colección de pequeñas unidades independientes llamadas
+\emph{paquetes}. Las librerías están agrupadas en paquetes, cualquier paquete de 
+librerías podría depender de otros paquetes.
+La instalación de una aplicación podría implicar la búsqueda y la instalación de docenas
+de versiones particulares de otras librerías.  Estas dependencias generalmente se
+obtienen de un repositorio central que contiene miles de paquetes.  Esta filosofía,
+es la razón por la cual distribuciones de Linux utilizan complejos sistemas de gestión
 de paquetes como \code{dpkg} y \code{RPM} para realizar el seguimiento de las
-dependencias y evitar la instalaciÃ³n de dos aplicaciones que utilicen versiones
-incompatibles de la misma librerÃ­a.
+dependencias y evitar la instalación de dos aplicaciones que utilicen versiones
+incompatibles de la misma librería.
 
 % The second school, which is the norm for Linux-based systems, treats
 % software as a collection of small self-contained units called
@@ -44,13 +45,13 @@ incompatibles de la misma librerÃ­a.
 % incompatible versions of the same library.
 
 Hay pros y los contras de cada enfoque.  Tener un sistema altamente modular donde cada
-pieza puede ser actualizada o reemplazada hace que la gestiÃ³n mÃ¡s fÃ¡cil, ya que cada
-librerÃ­a estÃ¡ presente en un solo lugar, y todas las aplicaciones que la utilizan se
-benificiarÃ¡n cuando es actualiza.  Por ejemplo, una revisiÃ³n de seguridad en una
-biblioteca en particular llegarÃ¡ a todas las aplicaciones que la utilizan a la vez, 
-mientras que si una aplicaciÃ³n distribuye su propia librerÃ­a, esa revisiÃ³n de seguridad
-serÃ¡ mÃ¡s compleja de implementar, especialmente si las distintas aplicaciones utilizan
-diferentes versiones de la librerÃ­a.
+pieza puede ser actualizada o reemplazada hace que la gestión más fácil, ya que cada
+librería está presente en un solo lugar, y todas las aplicaciones que la utilizan se
+beneficiarán cuando es actualiza.  Por ejemplo, una revisión de seguridad en una
+biblioteca en particular llegará a todas las aplicaciones que la utilizan a la vez, 
+mientras que si una aplicación distribuye su propia librería, esa revisión de seguridad
+será más compleja de implementar, especialmente si las distintas aplicaciones utilizan
+diferentes versiones de la librería.
 
 % There are pros and cons to each approach.  Having a highly modular
 % system where every piece can be updated or replaced makes management

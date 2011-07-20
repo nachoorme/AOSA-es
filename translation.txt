@@ -18,9 +18,9 @@ intro.tex
 jitsi.tex           Jesus Sayar Celestino                      40
 llvm.tex
 makingsoftware.tex  Diego Bravo                               100
-mercurial.tex       Sebastian Kreft                            53
+mercurial.tex       Sebastian Kreft                            58
 nosql.tex                                                       
-packaging.tex       Daniel Pérez Rada                           ?                  
+packaging.tex       Daniel Pérez Rada                           5                  
 riak.tex
 selenium.tex        Juan Carlos Vergara                         ?
 sendmail.tex

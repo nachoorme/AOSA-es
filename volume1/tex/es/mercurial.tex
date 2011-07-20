@@ -563,7 +563,7 @@ Tenemos 32 bytes en vez de los 20 requeridos por SHA1, para soportar futuras exp
 
 Dado que el revlog provee una estructura genérica para los datos históricos, 
 podemos representar nuestro modelo de datos para nuestro árbol de archivos usando dicho concepto.
-Esta representaci'on consiste de tres tipos de revlogs: \emph{changelog}, \emph{manifests}, y
+Esta representación consiste de tres tipos de revlogs: \emph{changelog}, \emph{manifests}, y
 \emph{filelogs}. El changelog contiene metadata para cada revisión, con un puntero al revlog manifest 
 (esto es, un id de nodo para una revisión en el revlog de manifest). El manifest es un archivo que tiene una lista de nombres de archivos además del id 
 del nodo para cada uno, apuntando a una revisión en el filelog del archivo.
@@ -665,8 +665,8 @@ solo el contenido del archivo, además de cierto prefijo de metadata opcional (el
 
 Este modelo de datos nos permite acceso total a la bodega de datos en un 
 repositorio de Mercurial, pero no siempre es tan conveniente. A pesar que el 
-modelo actual está orientado verticalmente (un filelof por archivo), los 
-desarrolladores de Mercurial a menudo se encontraron en la situaci'on en la que 
+modelo actual está orientado verticalmente (un filelog por archivo), los 
+desarrolladores de Mercurial a menudo se encontraron en la situación en la que 
 querían manejar todos los detalles de una revisión. Desde que changeset de un 
 changelog comienzan y fácil acceso al manifest y filelogs de esa revisión.  
 Inventaron para esto otro conjunto de clases, llamadas \code{contextos} 
@@ -682,52 +682,89 @@ Inventaron para esto otro conjunto de clases, llamadas \code{contextos}
 %cleanly on top of the revlogs, which do exactly that. These are
 %called \code{contexts}.
 
-One nice thing about the way the separate revlogs are set up is the
-ordering. By ordering appends so that filelogs get appended to first,
-then the manifest, and finally the changelog, the repository is always
-in a consistent state. Any process that starts reading the changelog
-can be sure all pointers into the other revlogs are valid, which takes
-care of a number of issues in this department. Nevertheless, Mercurial
-also has some explicit locks to make sure there are no two processes
-appending to the revlogs in parallel.
+Una de las gracias de la forma en que los revlogs están dispuestos es el
+orden. Al ordenar los adiciones de manera tal que los filelogs sean añadidos al
+principio, luego el manifest y finalmente el changelog, el repositorio siempre 
+permanece en un estado consistente. Cualquier proceso que comience leyendo el 
+changelog puede estar seguro que todos los punteros a otros revlogs son válidos, 
+lo que soluciona algunos problemas en este departamento.
+Sin embargo, Mercurial tiene además locks explícitos que aseguran que no hayan 
+dos procesos agregando a los revlogs en paralelo.
+
+%One nice thing about the way the separate revlogs are set up is the
+%ordering. By ordering appends so that filelogs get appended to first,
+%then the manifest, and finally the changelog, the repository is always
+%in a consistent state. Any process that starts reading the changelog
+%can be sure all pointers into the other revlogs are valid, which takes
+%care of a number of issues in this department. Nevertheless, Mercurial
+%also has some explicit locks to make sure there are no two processes
+%appending to the revlogs in parallel.
 
 \end{aosasect2}
 
 \begin{aosasect2}{El Directorio de Trabajo}
 %\begin{aosasect2}{The Working Directory}
 
-A final important data structure is what we call the
-\emph{dirstate}. The dirstate is a representation of what's in the
-working directory at any given point. Most importantly, it keeps track
-of what revision has been checked out: this is the baseline for all
-comparisons from the \code{status} or \code{diff} commands, and also
-determines the parent(s) for the next changeset to be committed. The
-dirstate will have two parents set whenever the \code{merge} command
-has been issued, trying to merge one set of changes into the other.
 
-Because \code{status} and \code{diff} are very common operations (they
-help you check the progress of what you've currently got against the
-last changeset), the dirstate also contains a cache of the state of
-the working directory the last time it was traversed by Mercurial.
-Keeping track of last modified timestamps and file sizes makes it
-possible to speed up tree traversal. We also need to keep track of the
-state of the file: whether it's been added, removed, or merged in the
-working directory. This will again help speed up traversing the
-working directory, and makes it easy to get this information at commit
-time.
+La última estructura de datos importante es lo que llamamos el \emph{dirstate}.
+El dirstate es una representación de lo que hay en el directorio de trabajo 
+en cualquier momento. Pero lo más importante, es que mantiene un registro de
+que revisión ha sido obtenida (checked out). La que sirve de base para todas las
+comparaciones de los comandos \code{status} y \code{diff}, y también determina 
+el o los padres del siguiente grupo de cambios a commitear. El dirstate tendrá 
+dos padres cada vez que el comando \code{merge} se ejecuta, tratando de fusionar
+un grupo de cambios con otro.
+
+%A final important data structure is what we call the
+%\emph{dirstate}. The dirstate is a representation of what's in the
+%working directory at any given point. Most importantly, it keeps track
+%of what revision has been checked out: this is the baseline for all
+%comparisons from the \code{status} or \code{diff} commands, and also
+%determines the parent(s) for the next changeset to be committed. The
+%dirstate will have two parents set whenever the \code{merge} command
+%has been issued, trying to merge one set of changes into the other.
+
+Dado que \code{status} y \code{diff} son operaciones muy comunes (ellas ayudan
+a verificar el progreso de lo que uno tiene en relación al último cambio), el
+dirstate también contiene un caché del estado del directorio de trabajo tal como 
+estaba la última vez que Mercurial lo recorrió. Mantener el registro de las 
+fechas de las últimas modificaciones y tamaños de los archivos permite acelerar 
+el análisis. También necesitamos conocer el estado del archivo: si fue agregado,
+eliminado, o fusionado en el directorio de trabajo. Esto permite también acelerar
+el análisis del directorio de trabajo, y hace más fácil obtener la información al
+momento del commit.
+  
+%Because \code{status} and \code{diff} are very common operations (they
+%help you check the progress of what you've currently got against the
+%last changeset), the dirstate also contains a cache of the state of
+%the working directory the last time it was traversed by Mercurial.
+%Keeping track of last modified timestamps and file sizes makes it
+%possible to speed up tree traversal. We also need to keep track of the
+%state of the file: whether it's been added, removed, or merged in the
+%working directory. This will again help speed up traversing the
+%working directory, and makes it easy to get this information at commit
+%time.
 
 \end{aosasect2}
 
 \end{aosasect1}
 
-\begin{aosasect1}{Versioning Mechanics}
+\begin{aosasect1}{Mecánica del Versionamiento}
+%\begin{aosasect1}{Versioning Mechanics}
 
-Now that you are familiar with the underlying data model and the
-structure of the code at the lower levels of Mercurial, let's move up
-a little bit and consider how Mercurial implements version control
-concepts on top of the foundation described in the previous section.
+Ahora que ya está familiarizado con el modelo de datos subyacente y con la 
+estructura del código en el más bajo nivel en Mercurial, consideremos ahora como
+Mercurial implementa los conceptos de control de versiones sobre las bases descritas 
+en la sección anterior.
 
-\begin{aosasect2}{Branches}
+%Now that you are familiar with the underlying data model and the
+%structure of the code at the lower levels of Mercurial, let's move up
+%a little bit and consider how Mercurial implements version control
+%concepts on top of the foundation described in the previous section.
+
+\begin{aosasect2}{Branches (Ramas)}
+%\begin{aosasect2}{Branches}
+
 
 Branches are commonly used to separate different lines of development
 that will be integrated later. This might be because someone is
@@ -824,7 +861,7 @@ to determine precedence among them.
 
 \end{aosasect1}
 
-\begin{aosasect1}{Estructura Genera}
+\begin{aosasect1}{Estructura General}
 %\begin{aosasect1}{General Structure}
 
 Mercurial está escrito casi en su mayoría en Python, con sólo algunas partes y 
