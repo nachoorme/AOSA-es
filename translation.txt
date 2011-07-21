@@ -5,11 +5,11 @@ File                Transl. Assigned                           %        Proofrea
 aosa.tex            Sebastian Kreft                           100 
 asterisk.tex        Emilio Osorio                               ?
 audacity.tex
-bash.tex            Diego Bravo                                 ?
+bash.tex            Diego Bravo                               100
 bdb.tex             Diego Bravo                                 ?
 cmake.tex           Diego Bravo                                 ?
 colophon.tex        Sebastian Kreft                           100
-eclipse.tex         Diego Bravo                                90
+eclipse.tex         Diego Bravo                               100
 frontmatter.tex     Sebastian Kreft                           100
 graphite.tex
 hdfs.tex                                                        

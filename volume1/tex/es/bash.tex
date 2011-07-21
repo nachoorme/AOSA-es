@@ -1,189 +1,358 @@
-\begin{aosachapter}{The Bourne-Again Shell}{s:bash}{Chet Ramey}
+%\begin{aosachapter}{The Bourne-Again Shell}{s:bash}{Chet Ramey}
+\begin{aosachapter}{El Shell Bourne-Again}{s:bash}{Chet Ramey}
 
-\begin{aosasect1}{Introduction}
+\begin{aosasect1}{Introducción}
+%\begin{aosasect1}{Introduction}
 
-A Unix shell provides an interface that lets the user interact
-with the operating system by running commands.
-But a shell is also a fairly rich
-programming language: there are constructs for flow control,
-alternation, looping, conditionals, basic mathematical operations,
-named functions, string variables, and two-way communication between
-the shell and the commands it invokes.
+%A Unix shell provides an interface that lets the user interact
+%with the operating system by running commands.
+%But a shell is also a fairly rich
+%programming language: there are constructs for flow control,
+%alternation, looping, conditionals, basic mathematical operations,
+%named functions, string variables, and two-way communication between
+%the shell and the commands it invokes.
 
-Shells can be used interactively, from a terminal or terminal emulator
-such as xterm, and non-interactively, reading commands from a file.
-Most modern shells, including bash, provide command-line editing, in
-which the command line can be manipulated using emacs- or vi-like
-commands while it's being entered, and various forms of a saved
-history of commands.
+Un "shell" (capa, cáscara) en Unix proporciona una interfaz que permite
+al usuario interactuar con el sistema operativo mediante la ejecución
+de comandos.
+Pero un shell es también un lenguaje de programación relativamente rico:
+hay construcciones para control de flujo, alternación, bucles,
+condicionales, operaciones matemáticas básicas, funciones nominadas,
+variables de texto, y comunicación en ambos sentidos entre
+el shell y los comandos que éste invoca.
 
-Bash processing is much like a shell pipeline: after being read from
-the terminal or a script, data is passed through a number of stages,
-transformed at each step, until the shell finally executes a command
-and collects its return status.
 
-This chapter will explore bash's major components: input processing,
-parsing, the various word expansions and other command processing, and
-command execution, from the pipeline perspective.  These components
-act as a pipeline for data read from the keyboard or from a file,
-turning it into an executed command.
+%Shells can be used interactively, from a terminal or terminal emulator
+%such as xterm, and non-interactively, reading commands from a file.
+%Most modern shells, including bash, provide command-line editing, in
+%which the command line can be manipulated using emacs- or vi-like
+%commands while it's being entered, and various forms of a saved
+%history of commands.
+Los shells pueden ser utilizados interactivamente, desde un terminal
+o emulador de terminal tal como xterm; y no interactivamente, leyendo
+comandos desde un archivo. La mayoría de shells modernos, incluyendo
+bash, proporcionan edición de línea de comando, en la que
+ésta puede ser manipulada mediante comandos de estilo emacs o vi
+conforme está siendo ingresada, así como varias formas de almacenar
+una historia de comandos.
 
-\aosafigure{../images/bash/bash-article-diagram.eps}{Bash Component Architecture}{fig.bash.fig1}
+%Bash processing is much like a shell pipeline: after being read from
+%the terminal or a script, data is passed through a number of stages,
+%transformed at each step, until the shell finally executes a command
+%and collects its return status.
+
+El procesamiento en Bash es muy similar a una tubería: tras leerse desde
+el terminal o desde un script, los datos pasan a través de un conjunto de
+etapas, son transformados en cada paso, hasta que el shell finalmente
+ejecuta un comando y recoge su estado de retorno.
+
+%This chapter will explore bash's major components: input processing,
+%parsing, the various word expansions and other command processing, and
+%command execution, from the pipeline perspective.  These components
+%act as a pipeline for data read from the keyboard or from a file,
+%turning it into an executed command.
+
+Este capítulo explorará los principales componentes de bash: procesamiento
+de la entrada, análisis gramatical (parsing), las diversas expansiones
+de sentencias y otros procesamientos de los comandos, y la ejecución
+de comandos, desde la perspectiva de una tubería. Estos componentes
+actúan como una tubería para los datos leídos desde el teclado o desde
+un archivo, convirtiéndolos en un comando que se ejecuta.
+
+%\aosafigure{../images/bash/bash-article-diagram.eps}{Bash Component Architecture}{fig.bash.fig1}
+\aosafigure{../images/bash/bash-article-diagram.eps}{Arquitectura de Componentes Bash}{fig.bash.fig1}
 
 \begin{aosasect2}{Bash}
 
-Bash is the shell that appears in the GNU operating system, commonly
-implemented atop the Linux kernel, and several other common operating
-systems, most notably Mac OS X\@.  It offers functional improvements
-over historical versions of sh for both interactive and programming
-use.
+%Bash is the shell that appears in the GNU operating system, commonly
+%implemented atop the Linux kernel, and several other common operating
+%systems, most notably Mac OS X\@.  It offers functional improvements
+%over historical versions of sh for both interactive and programming
+%use.
+Bash es el shell que aparece con el sistema operativo GNU, comúnmente
+implementado por encima del kernel Linux, así como otros sistemas
+operativos comunes, notablemente Mac OS X\@. Ofrece mejoras funcionales
+sobre versiones históricas de sh tanto para uso interactivo como programático.
 
-The name is an acronym for Bourne-Again SHell, a pun combining the
-name of Stephen Bourne (the author of the direct ancestor of the
-current Unix shell \code{/bin/sh}, which appeared in the Bell Labs
-Seventh Edition Research version of Unix) with the notion of rebirth
-through reimplementation.
-The original author of bash was Brian Fox, an employee of the Free
-Software Foundation.  I am the current developer and maintainer, a
-volunteer who works at Case Western Reserve University in Cleveland,
-Ohio.
+%The name is an acronym for Bourne-Again SHell, a pun combining the
+%name of Stephen Bourne (the author of the direct ancestor of the
+%current Unix shell \code{/bin/sh}, which appeared in the Bell Labs
+%Seventh Edition Research version of Unix) with the notion of rebirth
+%through reimplementation.
+%The original author of bash was Brian Fox, an employee of the Free
+%Software Foundation.  I am the current developer and maintainer, a
+%volunteer who works at Case Western Reserve University in Cleveland,
+%Ohio.
 
-Like other GNU software, bash is quite portable.  It currently runs on
-nearly every version of Unix and a few other operating
-systems---independently-supported ports exist for hosted Windows
-environments such as Cygwin and MinGW, and ports to Unix-like systems
-such as QNX and Minix are part of the distribution.  It only requires
-a Posix environment to build and run, such as one provided by
-Microsoft's Services for Unix (SFU).
+El nombre es un acrónimo de Bourne-Again SHell, un juego de palabras
+que combina el nombre de  Stephen Bourne (el autor del antecesor
+directo del shell Unix actual \code{/bin/sh}, que apareció en
+el Unix Seventh Edition Research de Bell Labs) con la idea
+de un renacimiento mediante reimplementación. El autor original de bash
+fue Brian Fox, un empleado de la Free Software Foundation (FSF, Fundación
+de Software Libre.) Yo soy el desarrollador y mantenedor actual, un
+voluntario que trabaja en la universidad de Case Western Reserve
+en Cleveland, Ohio.
+
+%Like other GNU software, bash is quite portable.  It currently runs on
+%nearly every version of Unix and a few other operating
+%systems---independently-supported ports exist for hosted Windows
+%environments such as Cygwin and MinGW, and ports to Unix-like systems
+%such as QNX and Minix are part of the distribution.  It only requires
+%a Posix environment to build and run, such as one provided by
+%Microsoft's Services for Unix (SFU).
+
+Al igual que otro software GNU, bash es altamente portable. Actualmente
+se ejecuta en casi cualquier versión de Unix y algunos otros sistemas
+operativos---existen adaptaciones (ports) independientemente soportadas
+para entornos alojados en Windows tales como Cygwin y MinGW; asimismo
+la distribución incluye adaptaciones
+para sistemas tipo Unix tales como QNX y Minix. Sólo requiere un entorno
+Posix para compilarse y ejecutarse, tal como el proporcionado por
+los servicios de Microsoft para Unix (Microsoft's Services for Unix, SFU).
 
 \end{aosasect2}
 
 \end{aosasect1}
 
-\begin{aosasect1}{Syntactic Units and Primitives}
+%\begin{aosasect1}{Syntactic Units and Primitives}
+\begin{aosasect1}{Unidades Sintácticas y Primitivas}
 
-\begin{aosasect2}{Primitives}
+\begin{aosasect2}{Primitivas}
+%\begin{aosasect2}{Primitives}
 
-To bash, there are basically three kinds of tokens: reserved
-words, words, and operators.  Reserved words are those that have
-meaning to the shell and its programming language; usually these words
-introduce flow control constructs, like \code{if} and \code{while}.
-Operators are composed of one or more metacharacters: characters that
-have special meaning to the shell on their own, such as \code{|} and
-\code{{\textgreater}}.  The rest of the shell's input consists of
-ordinary words, some of which have special meaning---assignment
-statements or numbers, for instance---depending on where they appear
-on the command line.
+%To bash, there are basically three kinds of tokens: reserved
+%words, words, and operators.  Reserved words are those that have
+%meaning to the shell and its programming language; usually these words
+%introduce flow control constructs, like \code{if} and \code{while}.
+%Operators are composed of one or more metacharacters: characters that
+%have special meaning to the shell on their own, such as \code{|} and
+%\code{{\textgreater}}.  The rest of the shell's input consists of
+%ordinary words, some of which have special meaning---assignment
+%statements or numbers, for instance---depending on where they appear
+%on the command line.
 
-\end{aosasect2}
-
-\begin{aosasect2}{Variables and Parameters}
-
-As in any programming language, shells provide variables: names to
-refer to stored data and operate on it.  The shell provides basic
-user-settable variables and some built-in variables referred to as
-parameters.  Shell parameters generally reflect some aspect of the
-shell's internal state, and are set automatically or as a side effect
-of another operation.
-
-Variable values are strings.  Some values are treated specially
-depending on context; these will be explained later.  Variables are
-assigned using statements of the form \code{name=value}.  The
-\code{value} is optional; omitting it assigns the empty string to
-\code{name}.  If the value is supplied, the shell expands the value
-and assigns it to \code{name}.  The shell can perform different
-operations based on whether or not a variable is set, but assigning a
-value is the only way to set a variable.  Variables that have not been
-assigned a value, even if they have been declared and given
-attributes, are referred to as \emph{unset}.
-
-A word beginning with a dollar sign introduces a variable or parameter
-reference.  The word, including the dollar sign, is replaced with the
-value of the named variable.  The shell provides a rich set of
-expansion operators, from simple value replacement to changing or
-removing portions of a variable's value that match a pattern.
-
-There are provisions for local and global variables.  By default, all
-variables are global.  Any simple command (the most familiar type of
-command---a command name and optional set of arguments and
-redirections) may be prefixed by a set of assignment statements to
-cause those variables to exist only for that command.  The shell
-implements stored procedures, or shell functions, which can have
-function-local variables.
-
-Variables can be minimally typed: in addition to simple string-valued
-variables, there are integers and arrays.  Integer-typed variables are
-treated as numbers: any string assigned to them is expanded as an
-arithmetic expression and the result is assigned as the variable's
-value.  Arrays may be indexed or associative; indexed arrays use
-numbers as subscripts, while associative arrays use arbitrary strings.
-Array elements are strings, which can be treated as integers if
-desired.  Array elements may not be other arrays.
-
-Bash uses hash tables to store and retrieve shell variables, and
-linked lists of these hash tables to implement variable scoping.
-There are different variable scopes for shell function calls and
-temporary scopes for variables set by assignment statements preceding
-a command.  When those assignment statements precede a command that is
-built into the shell, for instance, the shell has to keep track of the
-correct order in which to resolve variable references, and the linked
-scopes allow bash to do that.  There can be a surprising number of
-scopes to traverse depending on the execution nesting level.
+Para bash, existen básicamente tres tipos de tokens (unidad mínima
+para procesamiento): palabras reservadas, palabras, y operadores. Las
+palabras reservadas son aquellas que tienen significado para el
+shell y su lenguaje de programación; usualmente esas palabras
+introducen construcciones de control de flujo, tal como
+\code{if} y \code{while}. Los operadores se componen de uno o más
+metacaracteres: caracteres que tienen significado especial para el
+shell en sí mismo, tales como \code{|} y \code{{\textgreater}}. El resto
+de la entrada del shell consiste de palabras ordinarias,
+algunas de las cuales tienen significado especial---sentencias de
+asignación o números, por ejemplo---dependiendo de dónde aparecen
+en la línea de comandos.
 
 \end{aosasect2}
 
-\begin{aosasect2}{The Shell Programming Language}
+\begin{aosasect2}{Variables y Parámetros}
+%\begin{aosasect2}{Variables and Parameters}
 
-A \emph{simple} shell command, one with which most readers are most
-familiar, consists of a command name, such as \code{echo} or
-\code{cd}, and a list of zero or more arguments and redirections.
-Redirections allow the shell user to control the input to and output
-from invoked commands.  As noted above, users can define variables
-local to simple commands.
+%As in any programming language, shells provide variables: names to
+%refer to stored data and operate on it.  The shell provides basic
+%user-settable variables and some built-in variables referred to as
+%parameters.  Shell parameters generally reflect some aspect of the
+%shell's internal state, and are set automatically or as a side effect
+%of another operation.
 
-Reserved words introduce more complex shell commands.  There are
-constructs common to any high-level programming language, such as
-\code{if-then-else}, \code{while}, a \code{for} loop that iterates
-over a list of values, and a C-like arithmetic \code{for} loop.
-These more complex commands allow the shell to execute a
-command or otherwise test a condition and perform different operations
-based on the result, or execute commands multiple times.
+Como en cualquier lenguaje de programación, los shells proporcionan
+variables: nombres que hacen referencia a datos almacenados y
+operan sobre éstos. El shell proporciona variables básicas
+definibles por el usuario y algunas variables propias (built-in)
+que reflejan algún aspecto del estado interno del shell, y son
+fijadas automáticamente o como un efecto complementario a otra
+operación.
 
-One of the gifts Unix brought the computing world is the pipeline: a
-linear list of commands, in which the output of one command in the
-list becomes the input of the next.  Any shell construct can be used
-in a pipeline, and it's not uncommon to see pipelines in which a
-command feeds data to a loop.
+%Variable values are strings.  Some values are treated specially
+%depending on context; these will be explained later.  Variables are
+%assigned using statements of the form \code{name=value}.  The
+%\code{value} is optional; omitting it assigns the empty string to
+%\code{name}.  If the value is supplied, the shell expands the value
+%and assigns it to \code{name}.  The shell can perform different
+%operations based on whether or not a variable is set, but assigning a
+%value is the only way to set a variable.  Variables that have not been
+%assigned a value, even if they have been declared and given
+%attributes, are referred to as \emph{unset}.
 
-Bash implements a facility that allows the standard input, standard
-output, and standard error streams for a command to be redirected to
-another file or process when the command is invoked.  Shell
-programmers can also use redirection to open and close files in the
-current shell environment.
+Los valores de las variables son cadenas de texto (strings.) Algunos
+valores son tratados de manera especial dependiendo del contexto; esto
+se explicará luego. Las variables son asignadas utilizando sentencias
+de la forma \code{name=value}. El \code{value} es opcional; omitirlo
+asigna un string vacío a \code{name}.  Si el valor es proporcionado,
+el shell expande dicho valor y lo asigna a \code{name}. El shell
+puede proporcionar distintas operaciones basado en si una variable
+está definida o no, pero asignar un valor es la única manera de
+definir una variable. Las variables que no tienen un valor asignado,
+incluso si han sido declaradas y dados atributos, son
+referidas como \emph{unset} (no definidas.)
 
-Bash allows shell programs to be stored and used more than once.
-Shell functions and shell scripts are both ways to name a group of
-commands and execute the group, just like executing any other command.
-Shell functions are declared using a special syntax and stored and
-executed in the same shell's context; shell scripts are created by
-putting commands into a file and executing a new instance of the shell
-to interpret them.  Shell functions share most of the execution
-context with the shell that calls them, but shell scripts, since they
-are interpreted by a new shell invocation, share only what is passed
-between processes in the environment.
+
+%A word beginning with a dollar sign introduces a variable or parameter
+%reference.  The word, including the dollar sign, is replaced with the
+%value of the named variable.  The shell provides a rich set of
+%expansion operators, from simple value replacement to changing or
+%removing portions of a variable's value that match a pattern.
+
+Una palabra que empieza con un signo de dólar introduce una referencia
+a variable o parámetro. La palabra, incluyendo el signo de dólar,
+es reemplazada con el valor de la variable con ese nombre. El shell
+proporciona un rico conjunto de operadores de expansión, desde
+reemplazo de valores simples hasta cambiar o eliminar porciones
+del valor de una variables que coinciden con un patrón.
+
+%There are provisions for local and global variables.  By default, all
+%variables are global.  Any simple command (the most familiar type of
+%command---a command name and optional set of arguments and
+%redirections) may be prefixed by a set of assignment statements to
+%cause those variables to exist only for that command.  The shell
+%implements stored procedures, or shell functions, which can have
+%function-local variables.
+
+Hay soporte para variables globales y locales. Por omisión, todas
+las variables son globales. Cualquier comando simple (el tipo
+más familiar de comando---un nombre de comando y un conjunto opcional
+de argumentos y redirecciones) puede ser prefijado por un conjunto
+de sentencias de asignación que ocasionan que tales variables sólo
+existan para ese comando. El shell implementa procedimientos
+almacenados, o funciones de shell, que pueden tener
+variables locales a la función.
+
+%Variables can be minimally typed: in addition to simple string-valued
+%variables, there are integers and arrays.  Integer-typed variables are
+%treated as numbers: any string assigned to them is expanded as an
+%arithmetic expression and the result is assigned as the variable's
+%value.  Arrays may be indexed or associative; indexed arrays use
+%numbers as subscripts, while associative arrays use arbitrary strings.
+%Array elements are strings, which can be treated as integers if
+%desired.  Array elements may not be other arrays.
+
+Las variables pueden ser limitadamente pertenecientes a tipos: adicionalmente
+a valores simples de cadena de texto, hay enteros y arreglos. Las variables
+de tipo entero son tratadas como números: cualquier cadena de texto
+asignada a éstas es expandida como una expresión aritmética y el resultado
+es asignado al valor de la variable. Los arreglos pueden ser indexados
+o asociativos; los arreglos indexados utilizan números como subíndices,
+mientras los arreglos asociativos usan strings arbitrarios. Los elementos
+de los arreglos son strings, los que pueden ser tratados como enteros
+si se desea. Los elementos de los arreglos no pueden ser otros arreglos.
+
+%Bash uses hash tables to store and retrieve shell variables, and
+%linked lists of these hash tables to implement variable scoping.
+%There are different variable scopes for shell function calls and
+%temporary scopes for variables set by assignment statements preceding
+%a command.  When those assignment statements precede a command that is
+%built into the shell, for instance, the shell has to keep track of the
+%correct order in which to resolve variable references, and the linked
+%scopes allow bash to do that.  There can be a surprising number of
+%scopes to traverse depending on the execution nesting level.
+
+Bash utiliza tablas hash para almacenar y obtener variables de shell,
+y listas enlazadas de estas tablas hash para implementar los ámbitos
+de variables (scoping.) Hay diferentes ámbitos de variables para
+las llamadas a funciones de shell y ámbitos temporales para variables
+fijadas por sentencias de asignación que preceden un comando. Cuando
+esas sentencias de asignación preceden un comando que es interno
+al shell, por ejemplo, el shell tiene que llevar la cuenta del orden
+correcto en el cual resolver las referencias de variables, y los
+ámbitos enlazados permiten a bash hacer esto. Puede haber un número
+sorprendente de ámbitos a recorrer dependiendo del nivel de anidamiento
+de la ejecución.
 
 \end{aosasect2}
 
-\begin{aosasect2}{A Further Note}
+\begin{aosasect2}{El Lenguaje de Programación del Shell}
+%\begin{aosasect2}{The Shell Programming Language}
 
-As you read further, keep in mind that the shell implements its
-features using only a few data structures: arrays, trees,
-singly-linked and doubly-linked lists, and hash tables.  Nearly all of
-the shell constructs are implemented using these primitives.
+%A \emph{simple} shell command, one with which most readers are most
+%familiar, consists of a command name, such as \code{echo} or
+%\code{cd}, and a list of zero or more arguments and redirections.
+%Redirections allow the shell user to control the input to and output
+%from invoked commands.  As noted above, users can define variables
+%local to simple commands.
+Un comando \emph{simple} de shell con el cual la mayoría de lectores
+está familiarizado, consiste de un nombre de comando, tal como
+\code{echo} o \code{cd}, y una lista de cero o más argumentos y
+redirecciones. Las redirecciones permiten al usuario del shell controlar
+la entrada y la salida de comandos invocados. Como anotamos arriba, los
+usuarios pueden definir variables locales a comandos simples.
 
-The basic data structure the shell uses to pass information from one
-stage to the next, and to operate on data units within each processing
-stage, is the \code{WORD\_DESC}:
+%Reserved words introduce more complex shell commands.  There are
+%constructs common to any high-level programming language, such as
+%\code{if-then-else}, \code{while}, a \code{for} loop that iterates
+%over a list of values, and a C-like arithmetic \code{for} loop.
+%These more complex commands allow the shell to execute a
+%command or otherwise test a condition and perform different operations
+%based on the result, or execute commands multiple times.
+
+Las palabras reservadas introducen comandos de shell más complejos. Hay
+construcciones comunes con cualquier lenguaje de programación de alto
+nivel, tal como \code{if-then-else}, \code{while}, un bucle \code{for} que
+itera sobre una lista de valores, y un bucle \code{for} aritmético
+de estilo C. Esos comandos más complejos permiten al shell ejecutar un
+comando así como probar una condición y llevar a cabo distintas operaciones basadas en el resultado, o ejecutar comandos en repetidas veces. 
+
+%One of the gifts Unix brought the computing world is the pipeline: a
+%linear list of commands, in which the output of one command in the
+%list becomes the input of the next.  Any shell construct can be used
+%in a pipeline, and it's not uncommon to see pipelines in which a
+%command feeds data to a loop.
+
+Uno de los obsequios que Unix proporcionó al mundo de la computación
+es la tubería: una lista lineal de comandos, en la que la salida de un
+comando en la lista se torna la entrada del siguiente. cualquier
+construcción de shell puede ser utilizada en una tubería, y no es
+extraño ver tuberías en las que un comando alimenta con datos a un bucle.
+
+%Bash implements a facility that allows the standard input, standard
+%output, and standard error streams for a command to be redirected to
+%another file or process when the command is invoked.  Shell
+%programmers can also use redirection to open and close files in the
+%current shell environment.
+
+Bash  implementa una facilidad que permite a los canales de
+entrada estándar, salida estándar, y error estándar de un comando
+ser redirigidos a otro archivo o proceso cuando el comando es invocado.
+Los programadores de shell también pueden utilizar redirección para
+abrir y cerrar archivos en el entorno actual de shell.
+
+%Bash allows shell programs to be stored and used more than once.
+%Shell functions and shell scripts are both ways to name a group of
+%commands and execute the group, just like executing any other command.
+%Shell functions are declared using a special syntax and stored and
+%executed in the same shell's context; shell scripts are created by
+%putting commands into a file and executing a new instance of the shell
+%to interpret them.  Shell functions share most of the execution
+%context with the shell that calls them, but shell scripts, since they
+%are interpreted by a new shell invocation, share only what is passed
+%between processes in the environment.
+
+Bash permite a los programas de shell ser almacenados y utilizados más de una vez. Las funciones de shell y los scripts de shell son maneras de nombrar un grupo de comandos y ejecutar dicho grupo, tal como si se ejecutara cualquier otro comando. Las funciones de shell se declaran usando una sintaxis especial y son almacenadas y ejecutadas en el mismo contexto del shell; los scripts de shell son creados mediante el almacenamiento de comandos en un archivo, y ejecutados con una nueva instancia del shell que los interpreta. Las funciones de shell comparten la mayoría del contexto de ejecución con el shell que las llama, pero los scripts de shell, desde que son interpretados por una nueva invocación de shell, comparten sólo lo que se pasa entre procesos en el entorno.
+
+\end{aosasect2}
+
+\begin{aosasect2}{Nota Complementaria}
+%\begin{aosasect2}{A Further Note}
+
+%As you read further, keep in mind that the shell implements its
+%features using only a few data structures: arrays, trees,
+%singly-linked and doubly-linked lists, and hash tables.  Nearly all of
+%the shell constructs are implemented using these primitives.
+
+Conforme Ud. avance la lectura, tenga en cuenta que el shell implementa sus
+características utilizando sólo unas pocas estructuras de datos:
+arreglos, árboles, listas enlazadas (simples y dobles), y tablas
+hash. Casi todas las construcciones del shell son implementadas usando
+esas primitivas.
+
+%The basic data structure the shell uses to pass information from one
+%stage to the next, and to operate on data units within each processing
+%stage, is the \code{WORD\_DESC}:
+
+La estructura básica de datos que el shell utiliza para pasar información
+desde una etapa a la siguiente, y para operar en unidades de datos dentro
+de cada etapa de procesamiento es el \code{WORD\_DESC}:
 
 \begin{verbatim}
 typedef struct word_desc {
@@ -192,8 +361,9 @@ typedef struct word_desc {
 } WORD_DESC;
 \end{verbatim}
 
-\noindent Words are combined into, for example, argument lists, using simple
-linked lists:
+\noindent Las palabras se combinan en, por ejemplo, listas de argumentos, usando listas simplemente enlazadas:
+%\noindent Words are combined into, for example, argument lists, using simple
+%linked lists:
 
 \begin{verbatim}
 typedef struct word_list {
@@ -202,779 +372,1433 @@ typedef struct word_list {
 } WORD_LIST;
 \end{verbatim}
 
-\code{WORD\_LIST}s are pervasive throughout the shell.  A simple
-command is a word list, the result of expansion is a word list, and
-the built-in commands each take a word list of arguments.
+%\code{WORD\_LIST}s are pervasive throughout the shell.  A simple
+%command is a word list, the result of expansion is a word list, and
+%the built-in commands each take a word list of arguments.
+
+Las \code{WORD\_LIST} impregnan el shell. Un comando simple es
+una lista de palabras, el resultado de la expansión es una lista
+de palabras, y los comandos internos cada uno toman una lista de palabras
+como argumentos.
 
 \end{aosasect2}
 
 \end{aosasect1}
 
-\begin{aosasect1}{Input Processing}
+\begin{aosasect1}{Procesamiento de la Entrada}
+%\begin{aosasect1}{Input Processing}
 
-The first stage of the bash processing pipeline is input processing:
-taking characters from the terminal or a file, breaking them into
-lines, and passing the lines to the shell parser to transform into
-commands.  As you would expect, the lines are
-sequences of characters terminated by newlines.
+%The first stage of the bash processing pipeline is input processing:
+%taking characters from the terminal or a file, breaking them into
+%lines, and passing the lines to the shell parser to transform into
+%commands.  As you would expect, the lines are
+%sequences of characters terminated by newlines.
 
-\begin{aosasect2}{Readline and Command Line Editing}
+La primera etapa de la tubería de procesamiento de bash es el procesamiento
+de la entrada: tomar caracteres del terminal o de un archivo, partirlos
+en líneas, y pasar las líneas al parser (intérprete gramatical) del shell
+para transformarlas en comandos. Como podría esperarse, las líneas son
+secuencias de caracteres terminadas por saltos de línea.
 
-Bash reads input from the terminal when interactive, and from the
-script file specified as an argument otherwise.  When interactive,
-bash allows the user to edit command lines as they are typed in, using
-familiar key sequences and editing commands similar to the Unix emacs
-and vi editors.
+\begin{aosasect2}{Readline y la Edición de la Línea de Comandos}
+%\begin{aosasect2}{Readline and Command Line Editing}
 
-Bash uses the readline library to implement command line editing.
-This provides a set of functions allowing users to edit command lines,
-functions to save command lines as they are entered, to recall
-previous commands, and to perform csh-like history expansion.  Bash is
-readline's primary client, and they are developed together, but there
-is no bash-specific code in readline.  Many other projects have
-adopted readline to provide a terminal-based line editing interface.
+%Bash reads input from the terminal when interactive, and from the
+%script file specified as an argument otherwise.  When interactive,
+%bash allows the user to edit command lines as they are typed in, using
+%familiar key sequences and editing commands similar to the Unix emacs
+%and vi editors.
 
-Readline also allows users to bind key sequences of unlimited length
-to any of a large number of readline commands.  Readline has commands
-to move the cursor around the line, insert and remove text, retrieve
-previous lines, and complete partially-typed words.  On top of this,
-users may define macros, which are strings of characters that are
-inserted into the line in response to a key sequence, using the same
-syntax as key bindings.  Macros afford readline users a simple string
-substitution and shorthand facility.
+Bash lee su entrada desde el terminal cuando es interactivo, o
+desde el archivo script (guión) especificado como un argumento. Cuando
+es interactivo, bash permite al usuario editar líneas de comando
+mientras son tipeadas, usando comandos de secuencias de teclas
+similares a los editores Unix vi e emacs.
 
-\begin{aosasect3}{Readline Structure}
+%Bash uses the readline library to implement command line editing.
+%This provides a set of functions allowing users to edit command lines,
+%functions to save command lines as they are entered, to recall
+%previous commands, and to perform csh-like history expansion.  Bash is
+%readline's primary client, and they are developed together, but there
+%is no bash-specific code in readline.  Many other projects have
+%adopted readline to provide a terminal-based line editing interface.
 
-Readline is structured as a basic read/dispatch/execute/redisplay
-loop.  It reads characters from the keyboard using \code{read} or
-equivalent, or obtains input from a macro.  Each character is used as
-an index into a keymap, or dispatch table.  Though indexed by a single
-eight-bit character, the contents of each element of the keymap can be
-several things.  The characters can resolve to additional keymaps,
-which is how multiple-character key sequences are possible.  Resolving
-to a readline command, such as \code{beginning-of-line}, causes that
-command to be executed.
-A character bound to the \code{self-insert} command is stored into the
-editing buffer.
-It's also possible to bind a key sequence to
-a command while simultaneously binding subsequences to different
-commands (a relatively recently-added feature); there is a special
-index into a keymap to indicate that this is done.  Binding a key
-sequence to a macro provides a great deal of flexibility, from
-inserting arbitrary strings into a command line to creating
-keyboard shortcuts for complex editing sequences.  Readline stores
-each character bound to \code{self-insert} in the
-editing buffer, which when displayed may occupy one or more lines on
-the screen.
+Bash usa la librería readline para implementar la edición de línea
+de comando. Ésta proporciona un conjunto de funciones permitiendo
+a los usuarios la edición de líneas, funciones para grabar líneas
+de comandos al ser ingresadas, recuperar comandos previos, y
+ejecutar expansión de historia al estilo csh. Bash es el 
+cliente primario de readline, y son desarrollados conjuntamente, pero
+no hay código específico de bash en readline. Muchos otros proyectos
+han adoptado readline para proporcionar la interfaz de edición
+de líneas en el terminal.
 
-Readline manages only character buffers and strings using C
-\code{char}s, and builds multibyte characters out of them if
-necessary.  It does not use \code{wchar\_t} internally for both speed
-and storage reasons, and because the editing code existed before
-multibyte character support became widespread.  When in a locale that
-supports multibyte characters, readline automatically reads an entire
-multibyte character and inserts it into the editing buffer.  It's
-possible to bind multibyte characters to editing commands, but one has
-to bind such a character as a key sequence; this is possible, but
-difficult and usually not wanted.  The existing emacs and vi command
-sets do not use multibyte characters, for instance.
+%Readline also allows users to bind key sequences of unlimited length
+%to any of a large number of readline commands.  Readline has commands
+%to move the cursor around the line, insert and remove text, retrieve
+%previous lines, and complete partially-typed words.  On top of this,
+%users may define macros, which are strings of characters that are
+%inserted into the line in response to a key sequence, using the same
+%syntax as key bindings.  Macros afford readline users a simple string
+%substitution and shorthand facility.
 
-Once a key sequence finally resolves to an editing command,
-readline updates the terminal display to reflect the
-results.
-This happens regardless of whether the command
-results in characters being inserted into the buffer, the editing
-position being moved, or the line being partially or completely
-replaced.
-Some bindable editing commands, such as those that modify
-the history file, do not cause any change to the contents of the
-editing buffer.
+Readline también permite a los usuarios asociar secuencias de teclas
+de longitud ilimitada a cualquier cantidad de comandos readline.
+Readline tiene comandos para mover el cursor alrededor de la línea,
+insertar y eliminar texto, recuperar líneas previas, y completar
+palabras parcialmente tipeadas. Además de esto, los usuarios pueden
+definir macros, que son cadenas de caracteres que son
+insertadas en la línea en respuesta a una secuencia de teclas, usando
+la misma sintaxis que las asociaciones de teclas. Las macros proporcionan
+a los usuarios de readline una facilidad sencilla de abreviación
+y substitución de strings.
 
-Updating the terminal display, while seemingly simple, is quite
-involved.  Readline has to keep track of three things: the current
-contents of the buffer of characters displayed on the screen, the
-updated contents of that display buffer, and the actual characters
-displayed.  In the presence of multibyte characters, the characters
-displayed do not exactly match the buffer, and the redisplay engine
-must take that into account.  When redisplaying, readline must compare
-the current display buffer's contents with the updated buffer, figure
-out the differences, and decide how to most efficiently modify the
-display to reflect the updated buffer.  This problem has been the
-subject of considerable research through the years (the
-\emph{string-to-string correction problem}).  Readline's approach is to
-identify the beginning and end of the portion of the buffer that
-differs, compute the cost of updating just that portion, including
-moving the cursor backward and forward (e.g., will it take more effort
-to issue terminal commands to delete characters and then insert new
-ones than to simply overwrite the current screen contents?), perform
-the lowest-cost update, then clean up by removing any characters
-remaining at the end of the line if necessary and position the cursor
-in the correct spot.
+\begin{aosasect3}{Estructura de Readline}
+%\begin{aosasect3}{Readline Structure}
 
-The redisplay engine is without question the one piece of readline
-that has been modified most heavily.  Most of the changes have been to
-add functionality---most significantly, the ability to have
-non-displaying characters in the prompt (to change colors, for instance)
-and to cope with characters
-that take up more than a single byte.
+%Readline is structured as a basic read/dispatch/execute/redisplay
+%loop.  It reads characters from the keyboard using \code{read} or
+%equivalent, or obtains input from a macro.  Each character is used as
+%an index into a keymap, or dispatch table.  Though indexed by a single
+%eight-bit character, the contents of each element of the keymap can be
+%several things.  The characters can resolve to additional keymaps,
+%which is how multiple-character key sequences are possible.  Resolving
+%to a readline command, such as \code{beginning-of-line}, causes that
+%command to be executed.
+Readline está estructurada como un bucle básico
+de lectura/despacho/ejecución/revisualización. Ésta lee caracteres
+desde el teclado usando \code{read} o su equivalente, u obtiene
+entrada desde una macro. Cada caracter es usado como un
+índice en un mapa de teclas, o tabla de despacho. Aunque se indexa
+por un único caracter de ocho bits, los contenidos de cada elemento
+del mapa de teclas pueden ser diversas cosas. Los caracteres pueden
+resolverse en mapas de teclas adicionales, lo que hace posible
+las secuencias de teclas de múltiples caracteres. Resolver a un
+comando readline, tal como \code{beginning-of-line}, genera que
+ese comando sea ejecutado.
+%A character bound to the \code{self-insert} command is stored into the
+%editing buffer.
+%It's also possible to bind a key sequence to
+%a command while simultaneously binding subsequences to different
+%commands (a relatively recently-added feature); there is a special
+%index into a keymap to indicate that this is done.  Binding a key
+%sequence to a macro provides a great deal of flexibility, from
+%inserting arbitrary strings into a command line to creating
+%keyboard shortcuts for complex editing sequences.  Readline stores
+%each character bound to \code{self-insert} in the
+%editing buffer, which when displayed may occupy one or more lines on
+%the screen.
+Un caracter enlazado al comando \code{self-insert} es almacenado
+en el buffer de edición. También es posible asociar una secuencia
+de teclas a un comando mientras simultáneamente se asocian
+subsecuencias a diferentes comandos (una característica relativamente
+nueva); hay un índice especial en un mapa de teclas que indica que esto
+se ha hecho. Asociar una secuencia de teclas a una macro proporciona
+una  gran flexibilidad, desde la inserción de cadenas de texto
+arbitrarias en una línea de comandos hasta crear abreviaciones
+de teclado para secuencias de edición complejas. Readline almacena
+cada caracter asociado a \code{self-insert} en el buffer de
+edición, el que al mostrarse puede ocupar una o más líneas en la
+pantalla.
 
-Readline returns the contents of the editing buffer to the calling
-application, which is then responsible for saving the
-possibly-modified results in the history list.
+%Readline manages only character buffers and strings using C
+%\code{char}s, and builds multibyte characters out of them if
+%necessary.  It does not use \code{wchar\_t} internally for both speed
+%and storage reasons, and because the editing code existed before
+%multibyte character support became widespread.  When in a locale that
+%supports multibyte characters, readline automatically reads an entire
+%multibyte character and inserts it into the editing buffer.  It's
+%possible to bind multibyte characters to editing commands, but one has
+%to bind such a character as a key sequence; this is possible, but
+%difficult and usually not wanted.  The existing emacs and vi command
+%sets do not use multibyte characters, for instance.
+
+Readline sólo administra buffers y cadenas usando caracteres
+(\code{char}s) de lenguaje C, y crea caracteres multibyte
+a partir de éstos si es necesario. No utiliza el tipo
+\code{wchar\_t} internamente tanto por motivos de velocidad
+y almacenamiento, como porque el código de edición existía antes
+de que el soporte de caracteres multibyte sea popular. En
+ambientes localizados que soportan 
+caracteres multibyte, readline 
+automáticamente
+lee un caracter multibyte completo y lo inserta en el buffer
+de edición. Es posible asociar caracteres multibyte a comandos
+de edición, pero uno tiene que asociar tal caracter a la secuencia
+de teclas; esto es posible, pero difícil y usualmente indeseable.
+Por ejemplo, los conjuntos de comandos emacs y vi no usan caracteres multibyte.
+
+
+%Once a key sequence finally resolves to an editing command,
+%readline updates the terminal display to reflect the
+%results.
+%This happens regardless of whether the command
+%results in characters being inserted into the buffer, the editing
+%position being moved, or the line being partially or completely
+%replaced.
+%Some bindable editing commands, such as those that modify
+%the history file, do not cause any change to the contents of the
+%editing buffer.
+
+Una vez que una secuencia de teclas finalmente se resuelve en un comando de edición, readline actualiza la pantalla del terminal para reflejar los resultados. Esto ocurre al margen de si el comando resulta en caracteres siendo insertados en el buffer, la posición de edición movida, o la línea siendo parcial o totalmente reemplazada. Algunos comandos de edición asociables, tales como aquellos que modifican el archivo de historia, no ocasionan ningún cambio en el contenido del buffer de edición.
+
+%Updating the terminal display, while seemingly simple, is quite
+%involved.  Readline has to keep track of three things: the current
+%contents of the buffer of characters displayed on the screen, the
+%updated contents of that display buffer, and the actual characters
+%displayed.  In the presence of multibyte characters, the characters
+%displayed do not exactly match the buffer, and the redisplay engine
+%must take that into account.  When redisplaying, readline must compare
+%the current display buffer's contents with the updated buffer, figure
+%out the differences, and decide how to most efficiently modify the
+%display to reflect the updated buffer.  This problem has been the
+%subject of considerable research through the years (the
+%\emph{string-to-string correction problem}).  Readline's approach is to
+%identify the beginning and end of the portion of the buffer that
+%differs, compute the cost of updating just that portion, including
+%moving the cursor backward and forward (e.g., will it take more effort
+%to issue terminal commands to delete characters and then insert new
+%ones than to simply overwrite the current screen contents?), perform
+%the lowest-cost update, then clean up by removing any characters
+%remaining at the end of the line if necessary and position the cursor
+%in the correct spot.
+
+Actualizar la pantalla del terminal, aunque aparentemente simple, es muy complejo. Readline tiene que seguirle la pista a tres cosas: el contenido actual del buffer de caracteres mostrado en la pantalla, los contenidos actualizados de el buffer de la pantalla, y los caracteres realmente mostrados. En presencia de caracteres multibyte, los caracteres mostrados no coinciden exactamente con el buffer, y el motor de revisualización debe tomar esto en cuenta. Cuando se refresca la pantalla, readline debe comparar el contenido actual del buffer de pantalla con el buffer actualizado, descubrir las diferencias, y decidir cómo modificar de manera efectiva la pantalla para reflejar el buffer actualizado. Este problema ha sido un tema de mucha investigación a través de los años (el problema \emph{string-to-string correction}). La solución de Readline consiste en identificar el principio y final
+de la porción del buffer que difiere, calcular el costo de actualizar sólo esa porción, incluyendo mover el cursor hacia atrás o hacia adelante (por ejemplo, tomará más esfuerzo ejecutar comandos de terminal o borrar caracteres e insertar otros nuevos que simplemente sobreescribir el contenido actual?), ejecutar la actualización menos costosa, luego limpiar caracteres restantes al final de la línea si es necesario, y posicionar el cursor en el lugar correcto.
+%The redisplay engine is without question the one piece of readline
+%that has been modified most heavily.  Most of the changes have been to
+%add functionality---most significantly, the ability to have
+%non-displaying characters in the prompt (to change colors, for instance)
+%and to cope with characters
+%that take up more than a single byte.
+
+El motor de refresco de pantalla es sin duda la pieza de readline
+que ha sido más fuertemente modificada. La mayoría de cambios
+han sido para agregar funcionalidad---más significativamente, la
+habilidad de tener caracteres no visualizables en el prompt
+(para cambiar colores, por ejemplo) y operar con caracteres
+que consumen más de un solo byte.
+
+%Readline returns the contents of the editing buffer to the calling
+%application, which is then responsible for saving the
+%possibly-modified results in the history list.
+
+Readline retorna los contenidos del buffer de edición a la
+aplicación que invoca, la que es responsable de grabar los
+resultados posiblemente modificados en la lista de historia.
 
 \end{aosasect3}
 
-\begin{aosasect3}{Applications Extending Readline}
+\begin{aosasect3}{Aplicaciones que Extienden Readline}
+%\begin{aosasect3}{Applications Extending Readline}
 
-Just as readline offers users a variety of ways to customize and
-extend readline's default behavior, it provides a number of mechanisms
-for applications to extend its default feature set.  First, bindable
-readline functions accept a standard set of arguments and return a
-specified set of results, making it easy for applications to extend
-readline with application-specific functions.  Bash, for instance,
-adds more than thirty bindable commands, from bash-specific word
-completions to interfaces to shell built-in commands.
+%Just as readline offers users a variety of ways to customize and
+%extend readline's default behavior, it provides a number of mechanisms
+%for applications to extend its default feature set.  First, bindable
+%readline functions accept a standard set of arguments and return a
+%specified set of results, making it easy for applications to extend
+%readline with application-specific functions.  Bash, for instance,
+%adds more than thirty bindable commands, from bash-specific word
+%completions to interfaces to shell built-in commands.
 
-The second way readline allows applications to modify its behavior is
-through the pervasive use of pointers to hook functions with
-well-known names and calling interfaces.  Applications can replace
-some portions of readline's internals, interpose functionality in
-front of readline, and perform application-specific
-transformations.
+Así como readline ofrece a los usuarios diversos modos de personalizar
+y extender su comportamiento por omisión, también proporciona mecanismos
+para que las aplicaciones extiendan sus características básicas. Primero,
+las funciones enlazables de readline aceptan un conjunto estándar
+de argumentos y retornan un conjunto especificado de resultados,
+haciendo fácil que las aplicaciones extiendan readline con funciones
+específicas de la aplicación. Bash, por ejemplo, agrega más de
+treinta comandos enlazables, desde autocompletar palabras específicas
+de bash hasta interfaces a los comandos internos del shell.
+
+
+%The second way readline allows applications to modify its behavior is
+%through the pervasive use of pointers to hook functions with
+%well-known names and calling interfaces.  Applications can replace
+%some portions of readline's internals, interpose functionality in
+%front of readline, and perform application-specific
+%transformations.
+
+El segundo modo en que readline permite a las aplicaciones modificar
+su comportamiento es mediante el frecuente uso de punteros para
+enganchar funciones con nombres conocidos y llamar a interfaces. Las
+aplicaciones pueden reemplazar algunas porciones del comportamiento
+interno de readline, interponer funcionalidad en frente de readline,
+y proporcionar transformaciones específicas a la aplicación.
 
 \end{aosasect3}
 
 \end{aosasect2}
 
-\begin{aosasect2}{Non-interactive Input Processing}
+\begin{aosasect2}{Procesamiento No-Interactivo de la Entrada}
+%\begin{aosasect2}{Non-interactive Input Processing}
 
-When the shell is not using readline, it uses either \code{stdio} or its own
-buffered input routines to obtain input.  The bash buffered input
-package is preferable to \code{stdio} when the shell is not interactive
-because of the somewhat peculiar restrictions Posix imposes on input
-consumption: the shell must consume only the input necessary to parse
-a command and leave the rest for executed programs.  This is
-particularly important when the shell is reading a script from the
-standard input.  The shell is allowed to buffer input as much as it
-wants, as long as it is able to roll the file offset back to just
-after the last character the parser consumes.  As a practical matter,
-this means that the shell must read scripts a character at a time when
-reading from non-seekable devices such as pipes, but may buffer as
-many characters as it likes when reading from files.
+%When the shell is not using readline, it uses either \code{stdio} or its own
+%buffered input routines to obtain input.  The bash buffered input
+%package is preferable to \code{stdio} when the shell is not interactive
+%because of the somewhat peculiar restrictions Posix imposes on input
+%consumption: the shell must consume only the input necessary to parse
+%a command and leave the rest for executed programs.  This is
+%particularly important when the shell is reading a script from the
+%standard input.  The shell is allowed to buffer input as much as it
+%wants, as long as it is able to roll the file offset back to just
+%after the last character the parser consumes.  As a practical matter,
+%this means that the shell must read scripts a character at a time when
+%reading from non-seekable devices such as pipes, but may buffer as
+%many characters as it likes when reading from files.
+%
+%These idiosyncrasies aside, the output of the non-interactive input
+%portion of shell processing is the same as readline: a buffer of
+%characters terminated by a newline.
+Cuando el shell no está usando readline, utiliza ya sea
+\code{stdio} o sus propias rutinas con buffer para obtener
+la entrada. El paquete de entrada con buffer de bash es preferible
+a \code{stdio} cuando el shell no es interactivo debido a las
+algo peculiares restricciones que Posix impone en el 
+consumo de la entrada: el shell debe consumir sólo la entrada
+necesaria para interpretar un comando y dejar el resto para
+programas ejecutados. Esto es particularmente importante cuando el
+shell está leyendo un script desde la entrada estándar. El shell
+puede hacer buffer de la entrada tanto como quiera, en tanto
+pueda retornar el puntero del archivo justo después del último
+caracter que el parser consume. En la práctica, esto significa
+que el shell debe leer script un caracter a la vez cuando
+lee desde dispositivos en los que el puntero no puede modificarse
+tal como las tuberías, pero puede hacer buffer de cuantos caracteres
+guste cuando lee desde archivos.
 
-These idiosyncrasies aside, the output of the non-interactive input
-portion of shell processing is the same as readline: a buffer of
-characters terminated by a newline.
+Aparte de estas idiosincrasias, la salida de la porción de
+entrada no interactiva del procesamiento del shell es la misma
+que en readline: un buffer de caracteres terminado por un salto
+de línea.
 
 \end{aosasect2}
 
-\begin{aosasect2}{Multibyte Characters}
+\begin{aosasect2}{Caracteres Multibyte}
+%\begin{aosasect2}{Multibyte Characters}
 
-Multibyte character processing was added to the shell a long time
-after its initial implementation, and it was done in a way designed to
-minimize its impact on the existing code.  When in a locale that
-supports multibyte characters, the shell stores its input in a buffer
-of bytes (C \code{char}s), but treats these bytes as potentially
-multibyte characters.  Readline understands how to display multibyte
-characters (the key is knowing how many screen positions a multibyte
-character occupies, and how many bytes to consume from a buffer when
-displaying a character on the screen), how to move forward and
-backward in the line a character at a time, as opposed to a byte at a
-time, and so on.  Other than that, multibyte characters don't have
-much effect on shell input processing.  Other parts of the shell,
-described later, need to be aware of multibyte characters and take
-them into account when processing their input.
+%Multibyte character processing was added to the shell a long time
+%after its initial implementation, and it was done in a way designed to
+%minimize its impact on the existing code.  When in a locale that
+%supports multibyte characters, the shell stores its input in a buffer
+%of bytes (C \code{char}s), but treats these bytes as potentially
+%multibyte characters.  Readline understands how to display multibyte
+%characters (the key is knowing how many screen positions a multibyte
+%character occupies, and how many bytes to consume from a buffer when
+%displaying a character on the screen), how to move forward and
+%backward in the line a character at a time, as opposed to a byte at a
+%time, and so on.  Other than that, multibyte characters don't have
+%much effect on shell input processing.  Other parts of the shell,
+%described later, need to be aware of multibyte characters and take
+%them into account when processing their input.
+El procesamiento de caracteres multibyte fue agregado al shell
+mucho tiempo después de su implementación inicial, y fue hecho
+de modo tal que minimice su impacto en el código existente. Cuando
+se encuentra en un entorno localizado que soporta caracteres
+multibyte, el shell almacena su entrada en un buffer
+de bytes (\code{char}s de C), pero trata esos bytes como
+potenciales caracteres multibyte. Readline entiende cómo mostrar
+caracteres multibyte (la clave es saber cuántas posiciones ocupa
+un caracter multibyte en la pantalla, y cuántos bytes consumir
+de un buffer cuando se muestra un caracter en la pantalla), cómo
+avanzar y retroceder en la línea un caracter a la vez, en oposición
+a un byte a la vez, etc. Aparte de eso, los caracteres multibyte
+no tienen mucho efecto en el procesamiento de la entrada del shell.
+Otras partes del shell, descritas más adelante, necesitan considerar
+los caracteres multibyte al procesar su entrada.
 
 \end{aosasect2}
 
 \end{aosasect1}
 
-\begin{aosasect1}{Parsing}
+\begin{aosasect1}{Parsing (Análisis Gramatical)}
+%\begin{aosasect1}{Parsing}
 
-The initial job of the parsing engine is lexical analysis: to separate
-the stream of characters into words and apply meaning to the result.
-The word is the basic unit on which the parser operates.  Words are
-sequences of characters separated by metacharacters, which include
-simple separators like spaces and tabs, or characters that are special
-to the shell language, like semicolons and ampersands.
+%The initial job of the parsing engine is lexical analysis: to separate
+%the stream of characters into words and apply meaning to the result.
+%The word is the basic unit on which the parser operates.  Words are
+%sequences of characters separated by metacharacters, which include
+%simple separators like spaces and tabs, or characters that are special
+%to the shell language, like semicolons and ampersands.
 
-One historical problem with the shell, as Tom Duff said in his paper
-about \code{rc}, the Plan 9 shell, is that nobody really knows what
-the Bourne shell grammar is.  The Posix shell committee deserves
-significant credit for finally publishing a definitive grammar for a
-Unix shell, albeit one that has plenty of context dependencies.  That
-grammar isn't without its problems---it disallows some constructs that
-historical Bourne shell parsers have accepted without error---but it's
-the best we have.
+El trabajo inicial del motor de parsing es el análisis léxico: separar
+el flujo de caracteres en palabras y aplicar significado al
+resultado. La palabra es la unidad básica con que opera el parser.
+Las palabras son secuencias de caracteres separadas por metacaracteres,
+los que incluyen separadores simples como espacios y tabuladores,
+o caracteres que son especiales al lenguaje de shell, como
+puntos y comas, ampersands, etc.
+%One historical problem with the shell, as Tom Duff said in his paper
+%about \code{rc}, the Plan 9 shell, is that nobody really knows what
+%the Bourne shell grammar is.  The Posix shell committee deserves
+%significant credit for finally publishing a definitive grammar for a
+%Unix shell, albeit one that has plenty of context dependencies.  That
+%grammar isn't without its problems---it disallows some constructs that
+%historical Bourne shell parsers have accepted without error---but it's
+%the best we have.
 
-The bash parser is derived from an early version of the Posix grammar,
-and is, as far as I know, the only Bourne-style shell parser
-implemented using Yacc or Bison.  This has presented its own set of
-difficulties---the shell grammar isn't really well-suited to
-yacc-style parsing and requires some complicated lexical analysis and
-a lot of cooperation between the parser and the lexical analyzer.
+Un problema histórico con el shell, tal como dijo Tom Duff
+en su artículo acerca de \code{rc}, el shell de Plan 9, es que
+nadie realmente sabe cuál es la gramática del shell Bourne. El
+comité del shell Posix merece significativo crédito por publicar
+una gramática definitiva para un shell Unix, no obstante 
+tener muchas dependencias contextuales. Esta gramática no está
+libre de problemas---no permite ciertas construcciones que
+los parsers del shell Bourne histórico aceptaban sin error---pero
+es lo mejor que tenemos.
+%The bash parser is derived from an early version of the Posix grammar,
+%and is, as far as I know, the only Bourne-style shell parser
+%implemented using Yacc or Bison.  This has presented its own set of
+%difficulties---the shell grammar isn't really well-suited to
+%yacc-style parsing and requires some complicated lexical analysis and
+%a lot of cooperation between the parser and the lexical analyzer.
 
-In any event, the lexical analyzer takes lines of input from readline
-or another source, breaks them into tokens at metacharacters,
-identifies the tokens based on context, and passes them on to the
-parser to be assembled into statements and commands.  There is a lot
-of context involved---for instance, the word \code{for} can be a
-reserved word, an identifier, part of an assignment statement, or
-other word, and the following is a perfectly valid command:
+El parser de bash se deriva de una versión inicial de la gramática
+Posix, y es, hasta donde sé, el único parser de shell de estilo
+Bourne implementado utilizado con Yacc o Bison. Esto presentó su propio
+conjunto de dificultades---la gramática del shell no se
+acomoda bien al parsing de estilo yacc y requiere un análisis
+léxico complicado y mucha cooperación entre el parser y el analizador
+léxico.
+%In any event, the lexical analyzer takes lines of input from readline
+%or another source, breaks them into tokens at metacharacters,
+%identifies the tokens based on context, and passes them on to the
+%parser to be assembled into statements and commands.  There is a lot
+%of context involved---for instance, the word \code{for} can be a
+%reserved word, an identifier, part of an assignment statement, or
+%other word, and the following is a perfectly valid command:
+
+De cualquier forma, el analizador léxico toma líneas de entrada
+de readline u otra fuente, la parte en tokens en los metacaracteres,
+identifica los tokens basado en un contexto, y los proporciona
+al parser para ser ensamblados en sentencias y comandos. Hay mucho
+contexto involucrado---por ejemplo, la palabra \code{for} puede
+ser una palabra reservada, un identificador, parte de una
+sentencia de asignación, u otra palabra; así, el siguiente es un
+comando perfectamente válido.
 
 \begin{verbatim}
 for for in for; do for=for; done; echo $for
 \end{verbatim}
 
-\noindent that displays \code{for}.
+%\noindent that displays \code{for}.
+\noindent eso muestra \code{for}.
 
-At this point, a short digression about aliasing is in order.  Bash
-allows the first word of a simple command to be replaced with
-arbitrary text using aliases.  Since they're completely lexical,
-aliases can even be used (or abused) to change the shell grammar: it's
-possible to write an alias that implements a compound command that
-bash doesn't provide.  The bash parser implements aliasing completely
-in the lexical phase, though the parser has to inform the analyzer
-when alias expansion is permitted.
+%At this point, a short digression about aliasing is in order.  Bash
+%allows the first word of a simple command to be replaced with
+%arbitrary text using aliases.  Since they're completely lexical,
+%aliases can even be used (or abused) to change the shell grammar: it's
+%possible to write an alias that implements a compound command that
+%bash doesn't provide.  The bash parser implements aliasing completely
+%in the lexical phase, though the parser has to inform the analyzer
+%when alias expansion is permitted.
+En este punto es necesaria una pequeña digresión acerca de los alias.
+Bash permite a la primera palabra de un comando simple ser reemplazada
+con texto arbitrario utilizando alias. Al ser completamente
+léxicos, los alias pueden incluso ser utilizados (o abusados) para
+cambiar la gramática del shell: es posible escribir un
+alias que implementa un comando compuesto que bash no proporciona.
+El parser de bash implementa los alias completamente en la fase
+léxica, aunque el parser tiene que informar al analizador
+cuándo se permite la expansión de alias.
 
-Like many programming languages, the shell allows characters to be
-escaped to remove their special meaning, so that metacharacters such as
-\code{\&} can appear in commands.  There are three types of quoting,
-each of which is slightly different and permits slightly different
-interpretations of the quoted text: the backslash, which escapes the
-next character; single quotes, which prevent interpretation of all
-enclosed characters; and double quotes, which prevent some
-interpretation but allow certain word expansions (and treats
-backslashes differently).  The lexical analyzer interprets quoted
-characters and strings and prevents them from being recognized by the
-parser as reserved words or metacharacters.  There are also two
-special cases, \code{\$'...'} and \code{\$"..."}, that expand
-backslash-escaped characters in the same fashion as ANSI C strings and
-allow characters to be translated using standard internationalization
-functions, respectively.  The former is widely used; the latter,
-perhaps because there are few good examples or use cases, less so.
+%Like many programming languages, the shell allows characters to be
+%escaped to remove their special meaning, so that metacharacters such as
+%\code{\&} can appear in commands.  There are three types of quoting,
+%each of which is slightly different and permits slightly different
+%interpretations of the quoted text: the backslash, which escapes the
+%next character; single quotes, which prevent interpretation of all
+%enclosed characters; and double quotes, which prevent some
+%interpretation but allow certain word expansions (and treats
+%backslashes differently).  The lexical analyzer interprets quoted
+%characters and strings and prevents them from being recognized by the
+%parser as reserved words or metacharacters.  There are also two
+%special cases, \code{\$'...'} and \code{\$"..."}, that expand
+%backslash-escaped characters in the same fashion as ANSI C strings and
+%allow characters to be translated using standard internationalization
+%functions, respectively.  The former is widely used; the latter,
+%perhaps because there are few good examples or use cases, less so.
 
-The rest of the interface between the parser and lexical analyzer is
-straightforward.  The parser encodes a certain amount of state and
-shares it with the analyzer to allow the sort of context-dependent
-analysis the grammar requires.  For example, the lexical analyzer
-categorizes words according to the token type: reserved word (in the
-appropriate context), word, assignment statement, and so on.  In order
-to do this, the parser has to tell it something about how far it has
-progressed parsing a command, whether it is processing a
-multiline string (sometimes called a ``here-document''),
-whether it's in a case statement or a conditional
-command, or whether it is processing an extended shell pattern or compound
-assignment statement.
+Como muchos lenguajes de programación, el shell permite a los
+caracteres ser "escapados" para eliminar su significado especial; así,
+metacaracteres como \code{\&}  pueden aparecer en comandos. Hay
+tres tipos de "quoting" (entrecomillado), los cuales son ligeramente
+distintos y permiten interpretaciones ligeramente distintas del texto
+entrecomillado.: el backslash (barra invertida), que "escapa"
+al siguiente caracter; comillas simples, que evitan la
+interpretación de todos los caracteres encerrados; y comillas
+dobles, que previenen cierta
+interpretación pero permiten ciertas expansiones de palabras
+(y trata diferenciadamente al backslash.) El analizador léxico
+interpreta los caracteres entrecomillados y las cadenas y evita
+que sean reconocidas por el parser como palabras reservadas o
+metacaracteres. También hay dos casos especiales, \code{\$'...'}
+y \code{\$"..."}, que expanden caracteres escapados con backslash
+en la misma forma que las cadenas de caracteres ANSI C
+y permiten que los caracteres sean traducidos usando funciones
+de internacionalización estándar, respectivamente. El primero
+es ampliamente utilizado; el último, tal vez por haber pocos
+buenos ejemplos o casos de uso, lo es menos.
 
-Much of the work to recognize the end of the command substitution
-during the parsing stage is encapsulated into a single function
-(\code{parse\_comsub}), which knows an uncomfortable amount of shell
-syntax and duplicates rather more of the token-reading code than is
-optimal.  This function has to know about here documents, shell
-comments, metacharacters and word boundaries, quoting, and when
-reserved words are acceptable (so it knows when it's in a \code{case}
-statement); it took a while to get that right.
+%The rest of the interface between the parser and lexical analyzer is
+%straightforward.  The parser encodes a certain amount of state and
+%shares it with the analyzer to allow the sort of context-dependent
+%analysis the grammar requires.  For example, the lexical analyzer
+%categorizes words according to the token type: reserved word (in the
+%appropriate context), word, assignment statement, and so on.  In order
+%to do this, the parser has to tell it something about how far it has
+%progressed parsing a command, whether it is processing a
+%multiline string (sometimes called a ``here-document''),
+%whether it's in a case statement or a conditional
+%command, or whether it is processing an extended shell pattern or compound
+%assignment statement.
 
-When expanding a
-command substitution during word expansion, bash uses the parser to
-find the correct end of the construct.  This is similar to turning a
-string into a command for \code{eval}, but in this
-case the command isn't terminated by the end of the string.  In order
-to make this work, the parser must recognize a right parenthesis as a
-valid command terminator, which leads to special cases in a number of
-grammar productions and requires the lexical analyzer to flag a right
-parenthesis (in the appropriate context) as denoting EOF\@.  The parser
-also has to save and restore parser state before recursively invoking
-\code{yyparse}, since a command substitution can be parsed and
-executed as part of expanding a prompt string in the middle of reading
-a command.  Since the input functions implement read-ahead, this
-function must finally take care of rewinding the bash input pointer to
-the right spot, whether bash is reading input from a string, a file,
-or the terminal using readline.  This is important not only so that
-input is not lost, but so the command substitution expansion functions
-construct the correct string for execution.
+El resto de la interfaz entre el parser y el analizador léxico
+es sencillo. El parser codifica cierta cantidad de estado y
+lo comparte con el analizador para permitir el tipo de análisis
+dependiente del contexto que la gramática requiere. Por ejemplo,
+el analizador léxico categoriza las palabras de acuerdo al tipo de
+token: palabra reservada (en el contexto apropiado), palabra,
+sentencia de asignación, etc. Para hacer esto, el parser
+tiene que decirle algo acerca de cuán lejos ha progresado en
+el análisis de un comando, si está procesando un string multilínea
+(a veces denominado un ``here-document''), si está en una
+sentencia case o un comando condicional, o si está procesando
+un patrón extendido del shell o una sentencia de asignación
+compuesta.
+%Much of the work to recognize the end of the command substitution
+%during the parsing stage is encapsulated into a single function
+%(\code{parse\_comsub}), which knows an uncomfortable amount of shell
+%syntax and duplicates rather more of the token-reading code than is
+%optimal.  This function has to know about here documents, shell
+%comments, metacharacters and word boundaries, quoting, and when
+%reserved words are acceptable (so it knows when it's in a \code{case}
+%statement); it took a while to get that right.
 
-Similar problems are posed by programmable word completion, which allows
-arbitrary commands to be executed while parsing another command,
-and solved by saving and restoring parser state around invocations.
+Gran parte del trabajo para reconocer el final de la substitución
+de comando durante la etapa de parsing está en la función
+(\code{parse\_comsub}), la que tiene conocimiento de una poco confortable
+cantidad de sintaxis de shell y duplica más de lo que es óptimo
+el código de lectura de tokens. Esta función tiene que conocer
+acerca de documentos ``here'', comentarios de shell, metacaracteres
+y límites de palabras, entrecomillado, y cuándo son aceptables
+las palabras reservadas (de modo tal que sabe cuándo está
+en una sentencia \code{case}); tomó cierto tiempo lograr que quede bien.
+%When expanding a
+%command substitution during word expansion, bash uses the parser to
+%find the correct end of the construct.  This is similar to turning a
+%string into a command for \code{eval}, but in this
+%case the command isn't terminated by the end of the string.  In order
+%to make this work, the parser must recognize a right parenthesis as a
+%valid command terminator, which leads to special cases in a number of
+%grammar productions and requires the lexical analyzer to flag a right
+%parenthesis (in the appropriate context) as denoting EOF\@.  The parser
+%also has to save and restore parser state before recursively invoking
+%\code{yyparse}, since a command substitution can be parsed and
+%executed as part of expanding a prompt string in the middle of reading
+%a command.  Since the input functions implement read-ahead, this
+%function must finally take care of rewinding the bash input pointer to
+%the right spot, whether bash is reading input from a string, a file,
+%or the terminal using readline.  This is important not only so that
+%input is not lost, but so the command substitution expansion functions
+%construct the correct string for execution.
 
-Quoting is also a source of incompatibility and debate.  Twenty years
-after the publication of the first Posix shell standard, members of
-the standards working group are still debating the proper behavior of
-obscure quoting.  As before, the Bourne shell is no help other than as
-a reference implementation to observe behavior.
+Al expandir una substitución de comando durante una expansión de  palabra, bash usa el
+parser para encontrar el final correcto de la construcción. Esto es similar a
+convertir un texto en un comando para \code{eval}, pero en este caso el comando no
+es terminado por el final del texto. Para hacer que esto funcione, el parser debe
+reconocer un paréntesis derecho como un terminador de comando válido, lo que lleva
+a casos especiales en un conjunto de producciones gramaticales y requiere que el
+analizador léxico marque un paréntesis derecho (en el contexto apropiado) como
+denotando EOF\@. El parser también tiene que guardar y restaurar el estado del
+análisis antes de invocar recursivamente a \code{yyparse}, puesto que la
+substitución de comando puede ser analizada y ejecutada como parte de un
+texto de solicitud (prompt) en la mitad de la lectura de un comando. Puesto que
+las funciones de entrada implementan "read-ahead" (leer a continuación), esta
+función debe tener cuidado de retroceder el puntero de entrada de bash
+al lugar correcto, ya sea si bash está leyendo entrada desde un string,
+un archivo, o el terminal usando readline. Esto es importante no sólo para que
+la entrada no se pierda, sino para que las funciones de expansión de
+substitución de comandos construyan el string correcto para su ejecución.
+%
+%Similar problems are posed by programmable word completion, which allows
+%arbitrary commands to be executed while parsing another command,
+%and solved by saving and restoring parser state around invocations.
 
-The parser returns a single C structure representing a command (which,
-in the case of compound commands like loops, may include other
-commands in turn) and passes it to the next stage of the shell's
-operation: word expansion.  The command structure is composed of
-command objects and lists of words.  Most of the word lists are
-subject to various transformations, depending on their context, as
-explained in the following sections.
+Problemas similares se plantean mediante el autocompletado de palabras programable, que permite
+que comandos arbitrarios sean ejecutados mientras se analiza otro comando, y
+se resuelve guardando y restaurando el estado del parser entre invocaciones.
+%Quoting is also a source of incompatibility and debate.  Twenty years
+%after the publication of the first Posix shell standard, members of
+%the standards working group are still debating the proper behavior of
+%obscure quoting.  As before, the Bourne shell is no help other than as
+%a reference implementation to observe behavior.
+
+El entrecomillado (quoting) es también una fuente de incompatibilidad y debate. Veinte
+años después de la publicación del primer estándar de shell Posix, los miembros
+del grupo de trabajo del estándar siguen debatiendo el comportamiento
+correcto de oscuros entrecomillados. Como antes, el shell Bourne no es de más ayuda
+que una implementación de referencia para observar el comportamiento.
+%The parser returns a single C structure representing a command (which,
+%in the case of compound commands like loops, may include other
+%commands in turn) and passes it to the next stage of the shell's
+%operation: word expansion.  The command structure is composed of
+%command objects and lists of words.  Most of the word lists are
+%subject to various transformations, depending on their context, as
+%explained in the following sections.
+
+El parser retorna una única estructura de C representando un comando
+(que, en el caso de comandos compuestos como bucles, puede incluir otros
+comandos a su vez) y los pasa a la siguiente etapa de operación del shell:
+expansión de palabras. La estructura de comandos se compone de objetos
+de comandos y listas de palabras. La mayoría de las listas de palabras
+son sujetas a varias transformaciones, dependiendo de su contexto,
+como se explica en las siguientes secciones.
 
 \end{aosasect1}
 
-\begin{aosasect1}{Word Expansions}
+%\begin{aosasect1}{Word Expansions}
+\begin{aosasect1}{Expansiones de Palabras}
 
-After parsing, but before execution, many of the words produced by the
-parsing stage are subjected to one or more word expansions, so that
-(for example) \code{\$OSTYPE} is replaced with the string
-\code{"linux-gnu"}.
+%After parsing, but before execution, many of the words produced by the
+%parsing stage are subjected to one or more word expansions, so that
+%(for example) \code{\$OSTYPE} is replaced with the string
+%\code{"linux-gnu"}.
 
-\begin{aosasect2}{Parameter and Variable Expansions}
+Tras el parsing, pero antes de la ejecución, muchas de las palabras producidas
+por la etapa de parsing son sometidas a una o más expansiones de palabras, tal que
+(por ejemplo) \code{\$OSTYPE} se reemplaza con el string \code{"linux-gnu"}.
 
-Variable expansions are the ones users find most familiar.  Shell
-variables are barely typed, and, with few exceptions, are treated as
-strings.  The expansions expand and transform these strings into new
-words and word lists.
+%\begin{aosasect2}{Parameter and Variable Expansions}
+\begin{aosasect2}{Expansiones de Parámetros y Variables}
 
-There are expansions that act on the variable's value itself.
-Programmers can use these to produce substrings of a variable's
-value, the value's length, remove portions that match a specified
-pattern from the beginning or end, replace portions of the value
-matching a specified pattern with a new string, or modify the case of
-alphabetic characters in a variable's value.
+%Variable expansions are the ones users find most familiar.  Shell
+%variables are barely typed, and, with few exceptions, are treated as
+%strings.  The expansions expand and transform these strings into new
+%words and word lists.
 
-In addition, there are expansions that depend on the state of a
-variable: different expansions or assignments happen based on whether
-or not the variable is set.  For instance,
-\code{\$\{parameter:-word\}} will expand to \code{parameter} if it's
-set, and \code{word} if it's not set or set to the empty string.
+Las expansiones de variables son aquellas con que los usuarios están
+más familiarizados. Las variables del shell pertenecen ligeramente
+a ciertos tipos, y con pocas excepciones, son tratadas como strings.
+
+%There are expansions that act on the variable's value itself.
+%Programmers can use these to produce substrings of a variable's
+%value, the value's length, remove portions that match a specified
+%pattern from the beginning or end, replace portions of the value
+%matching a specified pattern with a new string, or modify the case of
+%alphabetic characters in a variable's value.
+
+Hay expansiones que actúan en el valor mismo de la variable. Los programadores
+pueden usar éstas para producir sub-strings (porciones de texto) del valor
+de una variable, la longitud del valor, eliminar porciones que coinciden
+con un patrón especificado desde el principio o final, reemplazar porciones
+del valor encajando un patrón especificado con un nuevo string, o modificar
+entre mayúsculas y minúsculas.
+
+%In addition, there are expansions that depend on the state of a
+%variable: different expansions or assignments happen based on whether
+%or not the variable is set.  For instance,
+%\code{\$\{parameter:-word\}} will expand to \code{parameter} if it's
+%set, and \code{word} if it's not set or set to the empty string.
+
+Adicionalmente, hay expansiones que dependen del estado de una variable: distintas
+expansiones o asignaciones ocurren en función de si  la variable está definida. Por
+ejemplo, \code{\$\{parameter:-word\}} se expandirá a \code{parameter} si está definida,
+y a \code{word}  si no lo está o está definida con un string vacío.
+
 
 \end{aosasect2}
 
-\begin{aosasect2}{And Many More}
+\begin{aosasect2}{Y Mucho Más}
+%\begin{aosasect2}{And Many More}
 
-Bash does many other kinds of expansion, each of which has its own
-quirky rules.  The first in processing order is brace expansion, which
-turns:
+%Bash does many other kinds of expansion, each of which has its own
+%quirky rules.  The first in processing order is brace expansion, which
+%turns:
+Bash hace muchos otros tipos de expansión, cada uno con sus propias y
+peculiares reglas. La primera en orden de procesamiento es la expansión
+de llaves, que transforma:
 
 \begin{verbatim}
 pre{one,two,three}post
 \end{verbatim}
 
-\noindent into:
+\noindent en:
 
 \begin{verbatim}
 preonepost pretwopost prethreepost
 \end{verbatim}
 
-There is also command substitution, which is a nice marriage of the
-shell's ability to run commands and manipulate variables.  The shell
-runs a command, collects the output, and uses that output as the value
-of the expansion.
+%There is also command substitution, which is a nice marriage of the
+%shell's ability to run commands and manipulate variables.  The shell
+%runs a command, collects the output, and uses that output as the value
+%of the expansion.
 
-One of the problems with command substitution is that it runs the
-enclosed command immediately and waits for it to complete: there's
-no easy way for the shell to send input to it.  Bash uses a feature
-named process substitution, a sort of combination of command
-substitution and shell pipelines, to compensate for these
-shortcomings.  Like command substitution, bash runs a command, but
-lets it run in the background and doesn't wait for it to complete.
-The key is that bash opens a pipe to the command for reading or
-writing and exposes it as a filename, which becomes the result of the
-expansion.
+También hay substitución de comandos, que es un bonito matrimonio de la
+habilidad del shell de ejecutar comandos y manipular variables. El shell
+ejecuta un comando, recoge su salida, y usa esta salida como el valor
+de la expansión.
 
-Next is tilde expansion.  Originally intended to turn
-\code{{\textasciitilde}alan} into a
-reference to Alan's home directory, it has grown over the years into a
-way to refer to a large number of different directories.
+%One of the problems with command substitution is that it runs the
+%enclosed command immediately and waits for it to complete: there's
+%no easy way for the shell to send input to it.  Bash uses a feature
+%named process substitution, a sort of combination of command
+%substitution and shell pipelines, to compensate for these
+%shortcomings.  Like command substitution, bash runs a command, but
+%lets it run in the background and doesn't wait for it to complete.
+%The key is that bash opens a pipe to the command for reading or
+%writing and exposes it as a filename, which becomes the result of the
+%expansion.
 
-Finally, there is arithmetic expansion.  \code{\$((expression))}
-causes \code{expression} to be evaluated according to the same rules
-as C language expressions.  The result of the expression becomes the
-result of the expansion.
+Uno de los problemas con la substitución de comandos es que ejecuta el comando inmediatamente y
+espera a que se complete: No hay una forma fácil para el shell de enviarle datos de entrada. Bash
+usa una característica llamada substitución de procesos nombrados (named process substitution),
+una suerte de combinación de substitución de comandos y tuberías de shell, para compensar
+esas limitaciones. Como en la substitución de comandos, bash ejecuta un comando, pero le permite
+ejecutarse en background y no espera a que se complete. La clave es que bash abre una tubería para
+que el comando lea o escriba y la expone como un nombre de archivo, el cual se torna el
+resultado de la expansión.
 
-Variable expansion is where the difference between single and double
-quotes becomes most apparent.  Single quotes inhibit all
-expansions---the characters enclosed by the quotes pass through the
-expansions unscathed---whereas double quotes permit some expansions
-and inhibit others.  The word expansions and command, arithmetic, and
-process substitution take place---the double quotes only affect how
-the result is handled---but brace and tilde expansion do not.
+%Next is tilde expansion.  Originally intended to turn
+%\code{{\textasciitilde}alan} into a
+%reference to Alan's home directory, it has grown over the years into a
+%way to refer to a large number of different directories.
 
-\end{aosasect2}
+Luego sigue la expansión de tilde. Su intención intencional fue
+convertir \code{{\textasciitilde}alan}  en una referencia al
+directorio personal (home directory) de Alan, ha crecido a través de los años
+a un modo de referirse a un gran número de distintos directorios.
 
-\begin{aosasect2}{Word Splitting}
+%Finally, there is arithmetic expansion.  \code{\$((expression))}
+%causes \code{expression} to be evaluated according to the same rules
+%as C language expressions.  The result of the expression becomes the
+%result of the expansion.
 
-The results of the word expansions are split using the characters in
-the value of the shell variable \code{IFS} as delimiters.  This is how
-the shell transforms a single word into more than one.  Each time one
-of the characters in \code{\$IFS}\footnote{In most cases, a sequence of one
-of the characters.} appears in the result, bash splits the word into
-two.  Single and double quotes both inhibit word splitting.
+Finalmente tenemos la expansión aritmética. La \code{\$((expression))} hace que
+\code{expression} sea evaluada de acuerdo a las mismas reglas que las
+expresiones del lenguaje C. El resultado de la expresión se torna en el resultado
+de la expansión.
 
-\end{aosasect2}
+%Variable expansion is where the difference between single and double
+%quotes becomes most apparent.  Single quotes inhibit all
+%expansions---the characters enclosed by the quotes pass through the
+%expansions unscathed---whereas double quotes permit some expansions
+%and inhibit others.  The word expansions and command, arithmetic, and
+%process substitution take place---the double quotes only affect how
+%the result is handled---but brace and tilde expansion do not.
 
-\begin{aosasect2}{Globbing}
-
-After the results are split, the shell interprets each word resulting
-from the previous expansions as a potential pattern and tries to match
-it against an existing filename, including any leading directory path.
-
-\end{aosasect2}
-
-\begin{aosasect2}{Implementation}
-
-If the basic architecture of the shell parallels a pipeline, the word
-expansions are a small pipeline unto themselves.  Each stage of word
-expansion takes a word and, after possibly transforming it, passes it
-to the next expansion stage.  After all the word expansions have been
-performed, the command is executed.
-
-The bash implementation of word expansions builds on the basic data
-structures already described.  The words output by the parser are
-expanded individually, resulting in one or more words for each input
-word.  The \code{WORD\_DESC} data structure has proved versatile
-enough to hold all the information required to encapsulate the
-expansion of a single word. The flags are used to encode information
-for use within the word expansion stage and to pass information from
-one stage to the next. For instance, the parser uses a flag to tell
-the expansion and command execution stages that a particular word is a
-shell assignment statement, and the word expansion code uses flags
-internally to inhibit word splitting or note the presence of a quoted
-null string (\code{"\$x"}, where \code{\$x} is unset or has a null
-value).  Using a single character string for each word being expanded,
-with some kind of character encoding to represent additional
-information, would have proved much more difficult.
-
-As with the parser, the word expansion code handles characters whose
-representation requires more than a single byte.  For example, the
-variable length expansion (\code{\${\#variable}}) counts the length in
-characters, rather than bytes, and the code can correctly identify the
-end of expansions or characters special to expansions in the presence
-of multibyte characters.
+La expansión de variables es donde es más aparente la diferencia entre
+entrecomillado simple y doble. Las comillas simples desactivan
+todas las expansiones---los caracteres encerrados pasan a través
+de las expansiones indemnes---mientras que las comillas dobles permiten
+algunas expansiones e inhiben otras. Se llevan a cabo las expresiones
+de palabras y substituciones de comandos, aritméticas y de
+procesos---las comillas dobles sólo afectan cómo se manipula el resultado---pero
+las expansiones de llaves y tilde no.
 
 \end{aosasect2}
 
-\end{aosasect1}
+\begin{aosasect2}{Partir Palabras}
+%\begin{aosasect2}{Word Splitting}
 
-\begin{aosasect1}{Command Execution}
+%The results of the word expansions are split using the characters in
+%the value of the shell variable \code{IFS} as delimiters.  This is how
+%the shell transforms a single word into more than one.  Each time one
+%of the characters in \code{\$IFS}\footnote{In most cases, a sequence of one
+%of the characters.} appears in the result, bash splits the word into
+%two.  Single and double quotes both inhibit word splitting.
 
-The command execution stage of the internal bash pipeline is where the
-real action happens.  Most of the time, the set of expanded words is
-decomposed into a command name and set of arguments, and passed to the
-operating system as a file to be read and executed with the remaining
-words passed as the rest of the elements of \code{argv}.
-
-The description thus far has deliberately concentrated on what Posix
-calls simple commands---those with a command name and a set of
-arguments.  This is the most common type of command, but bash provides
-much more.
-
-The input to the command execution stage is the command structure
-built by the parser and a set of possibly-expanded words.  This is
-where the real bash programming language comes into play.  The
-programming language uses the variables and expansions discussed
-previously, and implements the constructs one would expect in a
-high-level language: looping, conditionals, alternation, grouping,
-selection, conditional execution based on pattern matching, expression
-evaluation, and several higher-level constructs specific to the shell.
-
-\begin{aosasect2}{Redirection}
-
-One reflection of the shell's role as an interface to the operating
-system is the ability to redirect input and output to and from the
-commands it invokes.  The redirection syntax is one of the things that
-reveals the sophistication of the shell's early users: until very
-recently, it required users to keep track of the file descriptors they
-were using, and explicitly specify by number any other than standard
-input, output, and error.
-
-A recent addition to the redirection syntax allows users to direct the
-shell to choose a suitable file descriptor and assign it to a
-specified variable, instead of having the user choose one.  This
-reduces the programmer's burden of keeping track of file descriptors,
-but adds extra processing: the shell has to duplicate file descriptors
-in the right place, and make sure they are assigned to the specified
-variable.  This is another example of how information is passed from
-the lexical analyzer to the parser through to command execution: the
-analyzer classifies the word as a redirection containing a variable
-assignment; the parser, in the appropriate grammar production, creates
-the redirection object with a flag indicating assignment is required;
-and the redirection code interprets the flag and ensures that the file
-descriptor number is assigned to the correct variable.
-
-The hardest part of implementing redirection is remembering how to
-undo redirections.  The shell deliberately blurs the distinction
-between commands executed from the filesystem that cause the creation
-of a new process and commands the shell executes itself (builtins),
-but, no matter how the command is implemented, the effects of
-redirections should not persist beyond the command's completion\footnote{The
-\code{exec} builtin is an exception to this rule.}. The shell therefore has
-to keep track of how to undo the effects of each redirection,
-otherwise redirecting the output of a shell builtin would change the
-shell's standard output.  Bash knows how to undo each type of
-redirection, either by closing a file descriptor that it allocated, or
-by saving file descriptor being duplicated to and restoring it later
-using \code{dup2}.  These use the same redirection objects as those
-created by the parser and are processed using the same functions.
-
-Since multiple redirections are implemented as simple lists of
-objects, the redirections used to undo are kept in a separate list.
-That list is processed when a command completes, but the shell has to
-take care when it does so, since redirections attached to a shell
-function or the ``\code{.}'' builtin must stay in effect until that
-function or builtin completes.  When it doesn't invoke a command, the
-\code{exec} builtin causes the undo list to simply be discarded,
-because redirections associated with \code{exec} persist in the shell
-environment.
-
-The other complication is one bash brought on itself.  Historical
-versions of the Bourne shell allowed the user to manipulate only file
-descriptors 0-9, reserving descriptors 10 and above for the shell's
-internal use.  Bash relaxed this restriction, allowing a user to
-manipulate any descriptor up to the process's open file limit.  This
-means that bash has to keep track of its own internal file
-descriptors, including those opened by external libraries and not
-directly by the shell, and be prepared to move them around on demand.
-This requires a lot of bookkeeping, some heuristics involving the
-close-on-exec flag, and yet another list of redirections to be
-maintained for the duration of a command and then either processed or
-discarded.
+Los resultados de las expansiones de palabras son partidos usando los
+caracteres en el valor de la variable de shell \code{IFS}  como delimitadores. Así es
+como el shell transforma una palabra en más de una. Cada vez que aparece uno de los
+caracteres en  \code{\$IFS}\footnote{En muchos casos, una secuencia
+de uno de los caracteres.} en el resultado, bash divide la palabra en dos. Las comillas
+simples y dobles inhiben la división de palabras.
 
 \end{aosasect2}
 
-\begin{aosasect2}{Builtin Commands}
+%\begin{aosasect2}{Globbing}
+\begin{aosasect2}{Rutas con Comodines (Globbing)}
 
-Bash makes a number of commands part of the shell itself.  These
-commands are executed by the shell, without creating a new process.
+%After the results are split, the shell interprets each word resulting
+%from the previous expansions as a potential pattern and tries to match
+%it against an existing filename, including any leading directory path.
 
-The most common reason to make a command a builtin is to maintain or
-modify the shell's internal state.  \code{cd} is a good example; one
-of the classic exercises for introduction to Unix classes is to
-explain why \code{cd} can't be implemented as an external command.
-
-Bash builtins use the same internal primitives as the rest of the
-shell.  Each builtin is implemented using a C language function that
-takes a list of words as arguments.  The words are those output by the
-word expansion stage; the builtins treat them as command names and
-arguments.  For the most part, the builtins use the same standard
-expansion rules as any other command, with a couple of exceptions: the
-bash builtins that accept assignment statements as arguments (e.g.,
-\code{declare} and \code{export}) use the same expansion rules for the
-assignment arguments as those the shell uses for variable assignments.
-This is one place where the \code{flags} member of the
-\code{WORD\_DESC} structure is used to pass information between one
-stage of the shell's internal pipeline and another.
+Después de que los resultados se parten, el shell interpreta cada palabra
+de las expansiones previas como un patrón potencial y trata de encajarlas
+contra un nombre de archivo existente, incluyendo cualquier ruta en el directorio actual.
 
 \end{aosasect2}
 
-\begin{aosasect2}{Simple Command Execution}
+%\begin{aosasect2}{Implementation}
+\begin{aosasect2}{Implementación}
 
-Simple commands are the ones most commonly encountered.  The search
-for and execution of commands read from the filesystem, and
-collection of their exit status, covers many of the shell's remaining
-features.
+%If the basic architecture of the shell parallels a pipeline, the word
+%expansions are a small pipeline unto themselves.  Each stage of word
+%expansion takes a word and, after possibly transforming it, passes it
+%to the next expansion stage.  After all the word expansions have been
+%performed, the command is executed.
 
-Shell variable assignments (i.e., words of the form \code{var=value}) are a
-kind of simple command themselves.  Assignment statements can either
-precede a command name or stand alone on a command line.  If they
-precede a command, the variables are passed to the executed command in
-its environment (if they precede a built-in command or shell function,
-they persist, with a few exceptions, only as long as the builtin or
-function executes).  If they're not followed by a command name, the
-assignment statements modify the shell's state.
+Si la arquitectura básica del shell imita una tubería, las expansiones
+de palabras son una pequeña tubería en sí mismas. Cada etapa de
+la expansión de palabras toma una palabra, y tras posiblemente
+transformarla, la pasa a la siguiente etapa de expansión. Después de que
+todas las expansiones han sido ejecutadas, el comando se ejecuta.
 
-When presented a command name that is not the name of a shell function
-or builtin, bash searches the filesystem for an executable file with
-that name.  The value of the \code{PATH} variable is used as a
-colon-separated list of directories in which to search.  Command names
-containing slashes (or other directory separators) are not looked up,
-but are executed directly.
+%The bash implementation of word expansions builds on the basic data
+%structures already described.  The words output by the parser are
+%expanded individually, resulting in one or more words for each input
+%word.  The \code{WORD\_DESC} data structure has proved versatile
+%enough to hold all the information required to encapsulate the
+%expansion of a single word. The flags are used to encode information
+%for use within the word expansion stage and to pass information from
+%one stage to the next. For instance, the parser uses a flag to tell
+%the expansion and command execution stages that a particular word is a
+%shell assignment statement, and the word expansion code uses flags
+%internally to inhibit word splitting or note the presence of a quoted
+%null string (\code{"\$x"}, where \code{\$x} is unset or has a null
+%value).  Using a single character string for each word being expanded,
+%with some kind of character encoding to represent additional
+%information, would have proved much more difficult.
 
-When a command is found using a \code{PATH} search, bash saves the
-command name and the corresponding full pathname in a hash table,
-which it consults before conducting subsequent \code{PATH} searches.
-If the command is not found, bash executes a specially-named function,
-if it's defined, with the command name and arguments as arguments to
-the function.  Some Linux distributions use this facility to offer to
-install missing commands.
+La implementación de bash de las expansiones de palabras  se construye
+sobre las estructuras de datos básicas ya descritas. Las palabras de salida
+del parser son expandidas individualmente , resultando en una o más palabras
+por cada palabra de entrada. La estructura de datos \code{WORD\_DESC} ha probado
+ser suficientemente versátil para contener toda la información requerida para
+encapsular la expansión de una única palabra. Los indicadores (flags) son usados para
+codificar información para usarse dentro de la etapa de expansión de palabras
+y para pasar información desde una etapa a otra. Por ejemplo, el parser
+usa un indicador para decir a las etapas de expansión y ejecución de comandos
+que una palabra particular es una sentencia de asignación de shell, y el código
+de expansión de palabras usa indicadores para inhibir la separación de palabras
+o hacer notar la presencia de un string nulo entrecomillado (\code{"\$x"}, donde \code{\$x} 
+no está definido o tiene valor nulo.) El utilizar una única cadena de caracteres para cada palabra
+que se expande, con algún tipo de codificación de caracteres para representar información
+adicional, hubiera sido mucho más difícil.
 
-If bash finds a file to execute, it forks and creates a new execution
-environment, and executes the program in this new environment.  The
-execution environment is an exact duplicate of the shell environment,
-with minor modifications to things like signal disposition and files
-opened and closed by redirections.
+%As with the parser, the word expansion code handles characters whose
+%representation requires more than a single byte.  For example, the
+%variable length expansion (\code{\${\#variable}}) counts the length in
+%characters, rather than bytes, and the code can correctly identify the
+%end of expansions or characters special to expansions in the presence
+%of multibyte characters.
 
-\end{aosasect2}
-
-\begin{aosasect2}{Job Control}
-
-The shell can execute commands in the foreground, in which it waits
-for the command to finish and collects its exit status, or the
-background, where the shell immediately reads the next command.  Job
-control is the ability to move processes (commands being executed)
-between the foreground and background, and to suspend and resume their
-execution.  To implement this, bash introduces the concept of a job,
-which is essentially a command being executed by one or more
-processes. A pipeline, for instance, uses one process for each of its elements.
-The process group is a way to join separate processes
-together into a single job.  The terminal has a process group ID
-associated with it, so the foreground process group is the one whose
-process group ID is the same as the terminal's.
-
-The shell uses a few simple data structures in its job control
-implementation.  There is a structure to represent a child process,
-including its process ID, its state, and the status it returned when
-it terminated.  A pipeline is just a simple linked list of these
-process structures.  A job is quite similar: there is a list of
-processes, some job state (running, suspended, exited, etc.), and the
-job's process group ID\@.  The process list usually consists of a single
-process; only pipelines result in more than one process being
-associated with a job.  Each job has a unique process group ID, and
-the process in the job whose process ID is the same as the job's
-process group ID is called the process group leader.  The current set
-of jobs is kept in an array, conceptually very similar to how it's
-presented to the user.  The job's state and exit status are assembled
-by aggregating the state and exit statuses of the constituent
-processes.
-
-Like several other things in the shell, the complex part about
-implementing job control is bookkeeping.  The shell must take care to
-assign processes to the correct process groups, make sure that child
-process creation and process group assignment are synchronized, and
-that the terminal's process group is set appropriately, since the
-terminal's process group determines the foreground job (and, if it's
-not set back to the shell's process group, the shell itself won't be
-able to read terminal input).  Since it's so process-oriented, it's
-not straightforward to implement compound commands such as
-\code{while} and \code{for} loops so an entire loop can be stopped and
-started as a unit, and few shells have done so.
-
-\end{aosasect2}
-
-\begin{aosasect2}{Compound Commands}
-
-Compound commands consist of lists of one or more simple commands and
-are introduced by a keyword such as \code{if} or \code{while}.  This
-is where the programming power of the shell is most visible and
-effective.
-
-The implementation is fairly unsurprising.  The parser constructs
-objects corresponding to the various compound commands, and interprets
-them by traversing the object.  Each compound command is implemented
-by a corresponding C function that is responsible for performing the
-appropriate expansions, executing commands as specified, and altering
-the execution flow based on the command's return status.  The function
-that implements the \code{for} command is illustrative.  It must first
-expand the list of words following the \code{in} reserved word.  The
-function must then iterate through the expanded words, assigning each
-word to the appropriate variable, then executing the list of commands
-in the \code{for} command's body.  The for command doesn't have to
-alter execution based on the return status of the command, but it does
-have to pay attention to the effects of the \code{break} and
-\code{continue} builtins.  Once all the words in the list have been
-used, the \code{for} command returns.  As this shows, for the most
-part, the implementation follows the description very closely.
+Como con el parser, la expansión de palabras maneja caracteres cuya
+representación requiere más de un único byte. Por ejemplo, la expansión de
+longitud de variable  (\code{\${\#variable}})  cuenta la longitud
+en caracteres en vez de bytes, y el código puede identificar correctamente
+el final de las expansiones de caracteres especiales para expansiones en presencia
+de caracteres multibyte.
 
 \end{aosasect2}
 
 \end{aosasect1}
 
-\begin{aosasect1}{Lessons Learned}
+%\begin{aosasect1}{Command Execution}
+\begin{aosasect1}{Ejecución de Comandos}
 
-\begin{aosasect2}{What I Have Found Is Important}
+La etapa de ejecución de comandos de la tubería interna de bash es donde
+ocurre la acción real. La mayoría del tiempo, el conjunto de palabras
+expandidas es descompuesta en un nombre de comando y un conjunto de argumentos,
+y pasados al sistema operativo como un archivo a ser leído y ejecutado con
+las palabras restantes pasadas como el resto del los elementos de \code{argv}.
 
-I have spent over twenty years working on bash, and I'd like to think
-I have discovered a few things.
-The most important---one that I can't stress enough---is that it's
-vital to have detailed change logs.  It's good when you can go back to
-your change logs and remind yourself about why a particular change was
-made. It's even better when you can tie that change to a particular
-bug report, complete with a reproducible test case, or a suggestion.
+%The command execution stage of the internal bash pipeline is where the
+%real action happens.  Most of the time, the set of expanded words is
+%decomposed into a command name and set of arguments, and passed to the
+%operating system as a file to be read and executed with the remaining
+%words passed as the rest of the elements of \code{argv}.
 
-If it's appropriate, extensive regression testing is something I would
-recommend building into a project from the beginning.  Bash has
-thousands of test cases covering virtually all of its non-interactive
-features. I have considered building tests for interactive
-features---Posix has them in its conformance test suite---but did not
-want to have to distribute the framework I judged it would need.
+La descripción hasta ahora se ha concentrado deliberadamente en lo que
+Posix llama comandos simples---aquellos con un nombre de comando
+y un conjunto de argumentos. Este es el tipo más común de comando, pero
+bash proporciona mucho más.
+%The description thus far has deliberately concentrated on what Posix
+%calls simple commands---those with a command name and a set of
+%arguments.  This is the most common type of command, but bash provides
+%much more.
 
-Standards are important.  Bash has benefited from being an
-implementation of a standard.  It's important to participate in the
-standardization of the software you're implementing.  In addition to
-discussions about features and their behavior, having a standard to
-refer to as the arbiter can work well.  Of course, it can also work poorly---it
-depends on the standard.
+La entrada de la etapa de ejecución de comandos es la estructura de comandos
+construida por el parser y un conjunto de palabras posiblemente expandidas.
+Aquí es donde el lenguaje de programación real de bash entra en juego. El lenguaje
+de programación usa las variables y expansiones discutidas previamente, e implementa
+las construcciones que uno esperaría en un lenguaje de alto nivel: bucles, condicionales,
+alternación, agrupamiento, selección, ejecución condicional basada en correspondencia de patrones,
+evaluación de expresiones, y diversas construcciones de alto nivel específicas a el shell.
 
-External standards are important, but it's good to have
-internal standards as well.  I was lucky enough to fall into the GNU
-Project's set of standards, which provide plenty of good, practical
-advice about design and implementation.
+%The input to the command execution stage is the command structure
+%built by the parser and a set of possibly-expanded words.  This is
+%where the real bash programming language comes into play.  The
+%programming language uses the variables and expansions discussed
+%previously, and implements the constructs one would expect in a
+%high-level language: looping, conditionals, alternation, grouping,
+%selection, conditional execution based on pattern matching, expression
+%evaluation, and several higher-level constructs specific to the shell.
 
-Good documentation is another essential.  If you expect a program to
-be used by others, it's worth having comprehensive, clear
-documentation.  If software is successful, there will end up being
-lots of documentation for it, and it's important that the developer
-writes the authoritative version.
+\begin{aosasect2}{Redirección}
 
-There's a lot of good software out there.  Use what you can: for
-instance, gnulib has a lot of convenient library functions (once you
-can unravel them from the gnulib framework).  So do the BSDs and Mac
-OS X\@.  Picasso said "Great artists steal" for a reason.
+%One reflection of the shell's role as an interface to the operating
+%system is the ability to redirect input and output to and from the
+%commands it invokes.  The redirection syntax is one of the things that
+%reveals the sophistication of the shell's early users: until very
+%recently, it required users to keep track of the file descriptors they
+%were using, and explicitly specify by number any other than standard
+%input, output, and error.
 
-Engage the user community, but be prepared for occasional criticism,
-some that will be head-scratching.  An active user community can be a
-tremendous benefit, but one consequence is that people will become
-very passionate.  Don't take it personally.
+Un reflejo del rol del shell como una interfaz al sistema operativo es su capacidad
+de redirigir la entrada y salida hacia y desde los comandos que éste invoca. La sintaxis
+de redirección es una de las cosas que revela la sofisticación de los usuarios iniciales
+del shell: hasta muy recientemente, requería que los usuarios llevaran la pista
+de los descriptores de archivos que estaban usando, y explícitamente especificar
+por números cualquier otro distinto a la entrada, salida y error estándar.
+
+%A recent addition to the redirection syntax allows users to direct the
+%shell to choose a suitable file descriptor and assign it to a
+%specified variable, instead of having the user choose one.  This
+%reduces the programmer's burden of keeping track of file descriptors,
+%but adds extra processing: the shell has to duplicate file descriptors
+%in the right place, and make sure they are assigned to the specified
+%variable.  This is another example of how information is passed from
+%the lexical analyzer to the parser through to command execution: the
+%analyzer classifies the word as a redirection containing a variable
+%assignment; the parser, in the appropriate grammar production, creates
+%the redirection object with a flag indicating assignment is required;
+%and the redirection code interprets the flag and ensures that the file
+%descriptor number is assigned to the correct variable.
+
+Una adición reciente a la sintaxis de redirección permite a los usuarios redirigir
+el shell para elegir un descriptor de archivo adecuado  y asignarlo a una variable
+especificada, en vez de que el usuario escoja uno. Esto reduce la carga del programador
+de seguir la pista de los descriptores de archivos: el shell tiene que duplicar
+los descriptores de archivos en el lugar correcto y asegurarse de que son asignados
+a la variable especificada. Este es otro ejemplo de cómo la información se pasa
+del analizador léxico al parser mediante la ejecución de comandos: el analizador clasifica
+la palabra como una redirección conteniendo una asignación de variable; el parser, en la
+producción gramatical apropiada, crea el objeto de redirección con un indicador de requerimiento
+de asignación; y el código de redirección interpreta este indicador y se asegura de que el 
+número de descriptor de archivo se asigna a la variable correcta.
+
+%The hardest part of implementing redirection is remembering how to
+%undo redirections.  The shell deliberately blurs the distinction
+%between commands executed from the filesystem that cause the creation
+%of a new process and commands the shell executes itself (builtins),
+%but, no matter how the command is implemented, the effects of
+%redirections should not persist beyond the command's completion\footnote{The
+%\code{exec} builtin is an exception to this rule.}. The shell therefore has
+%to keep track of how to undo the effects of each redirection,
+%otherwise redirecting the output of a shell builtin would change the
+%shell's standard output.  Bash knows how to undo each type of
+%redirection, either by closing a file descriptor that it allocated, or
+%by saving file descriptor being duplicated to and restoring it later
+%using \code{dup2}.  These use the same redirection objects as those
+%created by the parser and are processed using the same functions.
+
+La parte más difícil de implementar la redirección es recordar cómo deshacer las
+redirecciones. El shell deliberadamente borra la distinción entre comandos
+ejecutados desde el sistema de archivos que ocasionan la creación de un nuevo proceso
+y comandos que el shell ejecuta por sí mismo (built-ins), pero, sin importar cómo se
+implemente el comando, los efectos de las redirecciones no deberían persistir más allá
+del término del comando\footnote{El builtin \code{exec} es una excepción a esta regla.}. El shell
+por lo tanto tiene que llevar la pista de cómo deshacer los efectos de cada redirección, en caso contrario
+redirigir la salida de un builtin de shell cambiaría la salida estándar del shell. Bash sabe cómo
+deshacer cada tipo de redirección, ya sea cerrando un descriptor de archivo que ha asignado,
+o salvando el descriptor de archivo que se duplica y restaurándolo más tarde con \code{dup2}. Estos usan
+los mismos objetos de redirección que aquellos creados por el parser y son procesados usando las mismas
+funciones.
+
+%Since multiple redirections are implemented as simple lists of
+%objects, the redirections used to undo are kept in a separate list.
+%That list is processed when a command completes, but the shell has to
+%take care when it does so, since redirections attached to a shell
+%function or the ``\code{.}'' builtin must stay in effect until that
+%function or builtin completes.  When it doesn't invoke a command, the
+%\code{exec} builtin causes the undo list to simply be discarded,
+%because redirections associated with \code{exec} persist in the shell
+%environment.
+
+Desde que múltiples redirecciones se implementan como listas simples de objetos, las redirecciones
+usadas para deshacer se mantienen en una lista separada. Esa lista es procesada cuando un comando
+se completa, pero el shell tiene que cuidar cuándo ocurre esto, pues las redirecciones asociadas
+a una función o al builtin ``\code{.}'' deben mantenerse en efecto hasta que la función o el
+builtin se completan. Cuando no invoca un comando, el builtin \code{exec} hace que la lista
+para deshacer sea simplemente descartada, pues todas las redirecciones asociadas con  \code{exec}
+persisten en el entorno del shell.
+
+%The other complication is one bash brought on itself.  Historical
+%versions of the Bourne shell allowed the user to manipulate only file
+%descriptors 0-9, reserving descriptors 10 and above for the shell's
+%internal use.  Bash relaxed this restriction, allowing a user to
+%manipulate any descriptor up to the process's open file limit.  This
+%means that bash has to keep track of its own internal file
+%descriptors, including those opened by external libraries and not
+%directly by the shell, and be prepared to move them around on demand.
+%This requires a lot of bookkeeping, some heuristics involving the
+%close-on-exec flag, and yet another list of redirections to be
+%maintained for the duration of a command and then either processed or
+%discarded.
+
+La otra complicación es una que bash se proporcionó a sí mismo. Las versiones
+históricas del shell Bourne permitían al usuario manipular sólo los descriptores
+0-9, reservando los descriptores por encima de 10 para uso interno del shell. Bash
+relajó esta restricción, permitiendo que un usuario manipule cualquier descriptor
+hasta el límite de archivos abiertos del proceso. Esto significa que bash tiene que
+seguir la pista de sus propios descriptores de archivos internos, incluyendo aquellos
+abiertos por librerías externas y no directamente por el shell, y estar preparado para
+moverlos en demanda. Esto requiere mucha contabilidad, algo de heurística que involucra
+el indicador close-on-exec, y otra lista de redirecciones a ser mantenida
+por la duración de un comando para ser entonces procesada o descartada.
 
 \end{aosasect2}
 
-\begin{aosasect2}{What I Would Have Done Differently}
+\begin{aosasect2}{Comandos Builtin}
+%\begin{aosasect2}{Builtin Commands}
 
-Bash has millions of users.  I've been educated about the importance
-of backwards compatibility.  In some sense, backwards compatibility
-means never having to say you're sorry.  The world, however, isn't
-quite that simple.  I've had to make incompatible changes from time to
-time, nearly all of which generated some number of user complaints,
-though I always had what I considered to be a valid reason, whether
-that was to correct a bad decision, to fix a design misfeature, or to
-correct incompatibilities between parts of the shell.  I would have
-introduced something like formal bash compatibility levels
-earlier.
 
-Bash's development has never been particularly open.  I have become
-comfortable with the idea of milestone releases (e.g., bash-4.2) and
-individually-released patches.  There are reasons for doing this: I
-accommodate vendors with longer release timelines than the free
-software and open source worlds, and I've had trouble in the past with
-beta software becoming more widespread than I'd like.  If I had to
-start over again, though, I would have considered more frequent
-releases, using some kind of public repository.
+%Bash makes a number of commands part of the shell itself.  These
+%commands are executed by the shell, without creating a new process.
+%
+%The most common reason to make a command a builtin is to maintain or
+%modify the shell's internal state.  \code{cd} is a good example; one
+%of the classic exercises for introduction to Unix classes is to
+%explain why \code{cd} can't be implemented as an external command.
+%
+%Bash builtins use the same internal primitives as the rest of the
+%shell.  Each builtin is implemented using a C language function that
+%takes a list of words as arguments.  The words are those output by the
+%word expansion stage; the builtins treat them as command names and
+%arguments.  For the most part, the builtins use the same standard
+%expansion rules as any other command, with a couple of exceptions: the
+%bash builtins that accept assignment statements as arguments (e.g.,
+%\code{declare} and \code{export}) use the same expansion rules for the
+%assignment arguments as those the shell uses for variable assignments.
+%This is one place where the \code{flags} member of the
+%\code{WORD\_DESC} structure is used to pass information between one
+%stage of the shell's internal pipeline and another.
+Bash incorpora diversos comandos como parte del shell en sí mismo. Esos comandos
+son ejecutados por el shell, sin crear un nuevo proceso.
 
-No such list would be complete without an implementation
-consideration.  One thing I've considered multiple times, but never
-done, is rewriting the bash parser using straight recursive-descent
-rather than using \code{bison}.  I once thought I'd have to do this in
-order to make command substitution conform to Posix, but I was able to
-resolve that issue without changes that extensive.  Were I starting
-bash from scratch, I probably would have written a parser by hand.  It
-certainly would have made some things easier.
+El motivo más común para hacer un comando builtin (interno al shell) es para
+mantener o modificar el estado interno del shell. \code{cd} es un  buen ejemplo; uno
+de los ejercicios clásicos en clases de introducción a Unix es explicar por qué
+\code{cd} no puede ser implementado como un comando externo.
+
+Los builtins de bash usan las mismas primitivas internas que el resto del shell. Cada
+builtin se implementa usando una función de lenguaje C que toma una lista de palabras
+como argumentos. Esas palabras son aquellas que salen de la etapa de expansión de palabras; 
+los builtins las consideran como nombres de comandos y argumentos. En la mayoría de casos
+los builtins usan las mismas reglas de expansión estándar que cualquier otro comando, con
+un par de excepciones: los builtins de bash que aceptan sentencias de asignación como
+argumentos (por ejemplo \code{declare} y  \code{export}) utilizan las mismas reglas
+de expansión para los argumentos de la asignación que aquellas que usa el shell para
+asignación de variables. Este es un lugar donde el miembro  \code{flags} de la
+estructura \code{WORD\_DESC} se utiliza para pasar información entre una etapa de la
+tubería interna del shell a la otra.
+
+
+\end{aosasect2}
+
+\begin{aosasect2}{Ejecución de Comandos Simples}
+%\begin{aosasect2}{Simple Command Execution}
+
+%Simple commands are the ones most commonly encountered.  The search
+%for and execution of commands read from the filesystem, and
+%collection of their exit status, covers many of the shell's remaining
+%features.
+%
+
+Los comandos simples son con los que más comúnmente nos encontramos. La búsqueda y
+ejecución de comandos cargados desde el sistema de archivos, y la obtención de su
+código de salida, cubre muchas de las características restantes del shell.
+%Shell variable assignments (i.e., words of the form \code{var=value}) are a
+%kind of simple command themselves.  Assignment statements can either
+%precede a command name or stand alone on a command line.  If they
+%precede a command, the variables are passed to the executed command in
+%its environment (if they precede a built-in command or shell function,
+%they persist, with a few exceptions, only as long as the builtin or
+%function executes).  If they're not followed by a command name, the
+%assignment statements modify the shell's state.
+
+Las asignaciones de variables del shell (palabras de la forma \code{var=value}) son un
+tipo de comando en sí mismos. Las sentencias de asignación pueden preceder a un comando
+o ser independientes en la línea de comandos. Si preceden un comando, las variables
+se pasan al comando ejecutado en su entorno (si preceden a un comando built-in o 
+función del shell, entonces persisten con unas pocas excepciones, sólo en tanto se ejecuta
+el built-in o la función.) Si no son seguidas por un nombre de comando, la
+sentencia de asignación modifica el estado del shell.
+
+%When presented a command name that is not the name of a shell function
+%or builtin, bash searches the filesystem for an executable file with
+%that name.  The value of the \code{PATH} variable is used as a
+%colon-separated list of directories in which to search.  Command names
+%containing slashes (or other directory separators) are not looked up,
+%but are executed directly.
+
+
+Cuando se ingresa un nombre de comando que no es el nombre de una función de shell
+o un builtin, bash busca en el sistema de archivos un archivo ejecutable
+con ese nombre. El valor de la variable  \code{PATH}  se utiliza como una lista 
+de directorios (separados por símbolo "dos puntos") en la cual buscar. Los nombres
+de comandos conteniendo slashes (/) u otros separadores de directorios, no son buscados
+(en el \code{PATH}) sino ejecutados directamente.
+%When a command is found using a \code{PATH} search, bash saves the
+%command name and the corresponding full pathname in a hash table,
+%which it consults before conducting subsequent \code{PATH} searches.
+%If the command is not found, bash executes a specially-named function,
+%if it's defined, with the command name and arguments as arguments to
+%the function.  Some Linux distributions use this facility to offer to
+%install missing commands.
+
+Cuando un comando es encontrado usando una búsqueda en \code{PATH}, bash guarda el nombre
+del comando y su ruta completa en una tabla hash, la cual consulta antes de realizar
+sucesivas búsquedas en \code{PATH}. Si el comando no se encuentra, bash ejecuta una
+función con un nombre predefinido si ésta estuviera definida, con el nombre del comando y sus argumentos como
+argumentos para dicha función. Algunas distribuciones utilizan esta facilidad para ofrecer
+la instalación de comandos faltantes.
+
+%If bash finds a file to execute, it forks and creates a new execution
+%environment, and executes the program in this new environment.  The
+%execution environment is an exact duplicate of the shell environment,
+%with minor modifications to things like signal disposition and files
+%opened and closed by redirections.
+
+Si bash encuentra un archivo para ejecutar, entonces bifurca (fork) y crea
+un nuevo entorno de ejecución, y ejecuta (exec) el programa en este nuevo
+entorno. El entorno de ejecución es un duplicado exacto que el del shell,
+con modificaciones menores como la disposición de señales y archivos
+abiertos y cerrados por redirecciones.
+
+\end{aosasect2}
+
+%\begin{aosasect2}{Job Control}
+\begin{aosasect2}{Control de Tareas}
+
+%The shell can execute commands in the foreground, in which it waits
+%for the command to finish and collects its exit status, or the
+%background, where the shell immediately reads the next command.  Job
+%control is the ability to move processes (commands being executed)
+%between the foreground and background, and to suspend and resume their
+%execution.  To implement this, bash introduces the concept of a job,
+%which is essentially a command being executed by one or more
+%processes. A pipeline, for instance, uses one process for each of its elements.
+%The process group is a way to join separate processes
+%together into a single job.  The terminal has a process group ID
+%associated with it, so the foreground process group is the one whose
+%process group ID is the same as the terminal's.
+
+El shell puede ejecutar comandos en primer plano (foreground), en los cuales
+espera a que el comando termine y recoge su estado de salida, o
+en segundo plano (background), donde el shell de inmediato lee el siguiente
+comando. El control de tareas (job control) es la capacidad de mover procesos
+(comandos siendo ejecutados) entre el primer plano y el segundo plano, y
+suspender y continuar su ejecución. Para implementar esto, bash introduce
+el concepto de tarea (job), que es esencialmente un comando siendo ejecutado por uno
+o más procesos. Una tubería, por ejemplo, usa un proceso para cada uno de sus
+elementos. El grupo de procesos es una forma de unir procesos separados en una
+única tarea. El terminal tiene un ID de grupo de procesos asociado, tal que el
+grupo de procesos en primer plano es el aquel cuyo ID de grupo de procesos
+es el mismo que el del terminal.
+
+%
+%The shell uses a few simple data structures in its job control
+%implementation.  There is a structure to represent a child process,
+%including its process ID, its state, and the status it returned when
+%it terminated.  A pipeline is just a simple linked list of these
+%process structures.  A job is quite similar: there is a list of
+%processes, some job state (running, suspended, exited, etc.), and the
+%job's process group ID\@.  The process list usually consists of a single
+%process; only pipelines result in more than one process being
+%associated with a job.  Each job has a unique process group ID, and
+%the process in the job whose process ID is the same as the job's
+%process group ID is called the process group leader.  The current set
+%of jobs is kept in an array, conceptually very similar to how it's
+%presented to the user.  The job's state and exit status are assembled
+%by aggregating the state and exit statuses of the constituent
+%processes.
+
+El shell usa algunas estructuras de datos simples en su implementación de
+control de tareas. Hay una estructura para representar un proceso hijo,
+incluyendo su ID de proceso, su estado y el código que retornó al terminar. Una
+tubería es simplemente una lista enlazada de esas estructuras de procesos. Una tarea
+es enteramente similar: es una lista de procesos, cierto estado de tarea (ejecutándose,
+suspendida, terminada, etc.) y el ID de grupo de procesos\@. La lista de procesos
+usualmente consiste de un único proceso; sólo las tuberías resultan en más de un
+proceso siendo asociado con una tarea. Cada tarea tiene un único ID de grupo de procesos,
+y el proceso en la tarea cuyo ID de proceso es el mismo que el ID del grupo de procesos
+de la tarea es llamado el proceso líder del grupo. El conjunto de
+tareas actual se mantiene en un arreglo, conceptualmente muy similar a cómo
+se presenta al usuario. El estado de la tarea y su código de terminación
+se construyen agregando el estado y el código de terminación de los procesos
+constituyentes.
+
+%
+%Like several other things in the shell, the complex part about
+%implementing job control is bookkeeping.  The shell must take care to
+%assign processes to the correct process groups, make sure that child
+%process creation and process group assignment are synchronized, and
+%that the terminal's process group is set appropriately, since the
+%terminal's process group determines the foreground job (and, if it's
+%not set back to the shell's process group, the shell itself won't be
+%able to read terminal input).  Since it's so process-oriented, it's
+%not straightforward to implement compound commands such as
+%\code{while} and \code{for} loops so an entire loop can be stopped and
+%started as a unit, and few shells have done so.
+%
+
+Como otras cosas en el shell, la parte compleja acerca de implementar
+el control de tareas es llevar los registros. El shell debe tener cuidado
+de asignar procesos a los grupos de procesos correctos, asegurarse
+de que la creación de procesos hijos y asignación de grupos de procesos están
+sincronizados, y que el grupo de procesos del terminal es fijado apropiadamente, puesto que
+el grupo de procesos del terminal determina la tarea de primer plano (y, si no es
+regresada al grupo de procesos del shell, el shell mismo no podría leer la
+entrada desde el terminal.) Puesto que esto está tan orientado al proceso,
+no es sencillo implementar comandos compuestos como \code{while}  y \code{for}  de modo que
+un bucle entero puede ser detenido e iniciado como una unidad, y pocos shells los han hecho.
+\end{aosasect2}
+%
+\begin{aosasect2}{Comandos Compuestos}
+%\begin{aosasect2}{Compound Commands}
+
+%Compound commands consist of lists of one or more simple commands and
+%are introduced by a keyword such as \code{if} or \code{while}.  This
+%is where the programming power of the shell is most visible and
+%effective.
+
+Los comandos compuestos consisten de listas de uno o más comandos simples y se introducen
+mediante una palabra clave tal como \code{if} o  \code{while}. Aquí es donde
+el poder de programación del shell es más visible y efectivo.
+
+
+%The implementation is fairly unsurprising.  The parser constructs
+%objects corresponding to the various compound commands, and interprets
+%them by traversing the object.  Each compound command is implemented
+%by a corresponding C function that is responsible for performing the
+%appropriate expansions, executing commands as specified, and altering
+%the execution flow based on the command's return status.  The function
+%that implements the \code{for} command is illustrative.  It must first
+%expand the list of words following the \code{in} reserved word.  The
+%function must then iterate through the expanded words, assigning each
+%word to the appropriate variable, then executing the list of commands
+%in the \code{for} command's body.  The for command doesn't have to
+%alter execution based on the return status of the command, but it does
+%have to pay attention to the effects of the \code{break} and
+%\code{continue} builtins.  Once all the words in the list have been
+%used, the \code{for} command returns.  As this shows, for the most
+%part, the implementation follows the description very closely.
+
+La implementación es relativamente poco sorprendente. El parser construye objetos
+correspondiendo a varios comandos compuestos, y los interpreta recorriendo el objeto. Cada
+comando compuesto se implementa mediante una función C correspondiente que es responsable
+de ejecutar las expansiones apropiadas, ejecutando los comandos como se especifican, y
+alterando el flujo de ejecución basado en el código de retorno del comando. La función que
+implementa el comando \code{for} es ilustrativa. Primero debe expandir la lista de palabras
+que siguen a la palabra reservada \code{in}.  La función debe iterar las palabras expandidas,
+asignando cada palabra a la variable apropiada, luego ejecutando la lista de comandos
+en el cuerpo del comando \code{for}. El comando for no tiene que alterar su ejecución basado en el
+código de retorno de el comando, pero tiene que prestar atención a los efectos de
+las palabras reservadas \code{break} y \code{continue}. Una vez que todas las palabras en la
+lista se han utilizado, el comando \code{for}  retorna. Como se ve, en lo principal, la implementación
+sigue la descripción muy de cerca.
 
 \end{aosasect2}
 
 \end{aosasect1}
 
-\begin{aosasect1}{Conclusions}
+\begin{aosasect1}{Lecciones Aprendidas}
+%\begin{aosasect1}{Lessons Learned}
 
-Bash is a good example of a large, complex piece of free software.  It
-has had the benefit of more than twenty years of development, and is
-mature and powerful.  It runs nearly everywhere, and is used by
-millions of people every day, many of whom don't realize it.
+%\begin{aosasect2}{What I Have Found Is Important}
+\begin{aosasect2}{Lo que Descubrí que es Importante}
 
-Bash has been influenced by many sources, dating back to the original
-7th Edition Unix shell, written by Stephen Bourne.  The most
-significant influence is the Posix standard, which dictates a
-significant portion of its behavior.  This combination of backwards
-compatibility and standards compliance has brought its own challenges.
+%I have spent over twenty years working on bash, and I'd like to think
+%I have discovered a few things.
+%The most important---one that I can't stress enough---is that it's
+%vital to have detailed change logs.  It's good when you can go back to
+%your change logs and remind yourself about why a particular change was
+%made. It's even better when you can tie that change to a particular
+%bug report, complete with a reproducible test case, or a suggestion.
+He dedicado más de veinte años a trabajar en bash, y quisiera
+pensar que he descubierto algunas cosas. La más importante---una
+que no puedo resaltar suficiente---es que resulta vital
+tener registros de cambios detallados. Es bueno cuando puedes
+volver a tus registros de cambios y recordar acerca de porqué
+se hizo un cambio en particular. Es mejor aún si se puede enlazar
+ese cambio a un reporte de fallo (bug report), completo con un
+caso de prueba reproducible, o una sugerencia.
 
-Bash has profited by being part of the GNU Project, which has provided
-a movement and a framework in which bash exists.  Without GNU, there
-would be no bash.  Bash has also benefited from its active, vibrant
-user community.  Their feedback has helped to make bash what it is
-today---a testament to the benefits of free software.
+%If it's appropriate, extensive regression testing is something I would
+%recommend building into a project from the beginning.  Bash has
+%thousands of test cases covering virtually all of its non-interactive
+%features. I have considered building tests for interactive
+%features---Posix has them in its conformance test suite---but did not
+%want to have to distribute the framework I judged it would need.
+Si es apropiado, una extensiva prueba de regresión es algo que
+yo recomiendo construir en un proyecto desde el principio. Bash
+tiene miles de casos de test cubriendo virtualmente todas sus
+características no interactivas. He considerado construir tests
+para características interactivas---Posix las tiene en su
+conjunto de pruebas de conformidad (test suite)---pero no
+quise tener que distribuir el framework que yo juzgué que se necesitaría.
+
+%Standards are important.  Bash has benefited from being an
+%implementation of a standard.  It's important to participate in the
+%standardization of the software you're implementing.  In addition to
+%discussions about features and their behavior, having a standard to
+%refer to as the arbiter can work well.  Of course, it can also work poorly---it
+%depends on the standard.
+
+Los estándares son importantes. Bash se ha beneficiado al ser
+la implementación de un estándar. Es importante participar en
+la estandarización del software que estás implementando. Adicionalmente
+a discusiones acerca de características y su comportamiento, tener
+un estándar de referencia como árbitro puede funcionar bien. Por
+supuesto, puede funcionar mal---depende de el estándar.
+
+%External standards are important, but it's good to have
+%internal standards as well.  I was lucky enough to fall into the GNU
+%Project's set of standards, which provide plenty of good, practical
+%advice about design and implementation.
+Los estándares externos son importantes, pero es bueno tener
+estándares internos también. Yo tuve la suerte de utilizar
+el conjunto de estándares de proyectos GNU, que proporcionan
+muchos buenos consejos acerca del diseño e implementación.
+
+%Good documentation is another essential.  If you expect a program to
+%be used by others, it's worth having comprehensive, clear
+%documentation.  If software is successful, there will end up being
+%lots of documentation for it, and it's important that the developer
+%writes the authoritative version.
+La buena documentación también es esencial. Si tu esperas que
+un programa sea utilizado por otros, es importante tener
+documentación clara y completa. Si el software es exitoso, terminará
+teniendo mucha documentación para sí, y es importante que el
+desarrollador escriba la versión autorizada.
+
+%There's a lot of good software out there.  Use what you can: for
+%instance, gnulib has a lot of convenient library functions (once you
+%can unravel them from the gnulib framework).  So do the BSDs and Mac
+%OS X\@.  Picasso said "Great artists steal" for a reason.
+
+Hay mucho software muy bueno. Usa lo que puedas. Por ejemplo,
+gnulib tiene muchas funciones de librería útiles (una vez
+que las puedes desenmarañar del framework gnulib). Así también
+los BSDs y Mac OS X\@. Por alguna razón Picasso dijo "Los grandes artistas roban".
+
+%Engage the user community, but be prepared for occasional criticism,
+%some that will be head-scratching.  An active user community can be a
+%tremendous benefit, but one consequence is that people will become
+%very passionate.  Don't take it personally.
+
+Aborda la comunidad de usuarios, pero prepárate para críticas
+ocasionales, algunas de las cuales pueden resultar confusas. Una
+comunidad activa de usuarios puede ser un tremendo beneficio,
+pero una consecuencia es que la gente se tornará muy apasionada. No
+lo tomes personalmente.
+
+\end{aosasect2}
+
+%\begin{aosasect2}{What I Would Have Done Differently}
+\begin{aosasect2}{Qué Habría Hecho Yo de Modo Distinto?}
+
+%Bash has millions of users.  I've been educated about the importance
+%of backwards compatibility.  In some sense, backwards compatibility
+%means never having to say you're sorry.  The world, however, isn't
+%quite that simple.  I've had to make incompatible changes from time to
+%time, nearly all of which generated some number of user complaints,
+%though I always had what I considered to be a valid reason, whether
+%that was to correct a bad decision, to fix a design misfeature, or to
+%correct incompatibilities between parts of the shell.  I would have
+%introduced something like formal bash compatibility levels
+%earlier.
+
+Bash tiene millones de usuarios. Yo he sido educado acerca
+de la importancia de la compatibilidad hacia atrás. En cierto
+sentido, la compatibilidad hacia atrás significa nunca tener que
+decir "lo siento". El mundo, sin embargo, no es tan simple. Yo tuve
+que hacer cambios incompatibles de tiempo en tiempo, casi todos
+los cuales generaron cierto número de reclamos de los usuarios,
+aunque yo siempre tuve lo que yo consideré un motivo válido,
+ya sea para corregir una mala decisión, para arreglar una
+mala característica de diseño, o para corregir incompatibilidades
+entre partes del shell. Yo habría introducido algo como niveles
+formales de compatibilidad bash con mayor anterioridad.
+ 
+
+%Bash's development has never been particularly open.  I have become
+%comfortable with the idea of milestone releases (e.g., bash-4.2) and
+%individually-released patches.  There are reasons for doing this: I
+%accommodate vendors with longer release timelines than the free
+%software and open source worlds, and I've had trouble in the past with
+%beta software becoming more widespread than I'd like.  If I had to
+%start over again, though, I would have considered more frequent
+%releases, using some kind of public repository.
+
+El desarrollo de bash nunca ha sido particularmente abierto. Yo
+me he acostumbrado a la idea de versiones hito (milestone
+releases) por ejemplo bash-4.2, y parches individualmente
+lanzados. Hay motivos para hacer esto: Yo acomodo a
+vendedores con versiones de mayores escalas de tiempo que
+en los mundos de software abierto y código abierto, y he
+tenido problemas en el pasado con software beta que se torna
+más popular de lo que yo quisiera. Si yo tuviera que empezar
+de nuevo, yo consideraría lanzamientos más frecuentes,
+utilizando algún tipo de repositorio público.
+
+%No such list would be complete without an implementation
+%consideration.  One thing I've considered multiple times, but never
+%done, is rewriting the bash parser using straight recursive-descent
+%rather than using \code{bison}.  I once thought I'd have to do this in
+%order to make command substitution conform to Posix, but I was able to
+%resolve that issue without changes that extensive.  Were I starting
+%bash from scratch, I probably would have written a parser by hand.  It
+%certainly would have made some things easier.
+
+Esta lista no estaría completa sin considerar la implementación. Una
+cosa que yo he considerado muchas veces pero nunca hice, es
+reescribir el parser de bash directamente utilizando descenso-recursivo
+en vez de utilizar \code{bison}. Una vez yo pensé que
+tendría que hacer esto para lograr que la substitución de comandos
+se adhiriera a Posix, pero logré resolver el asunto sin cambios
+tan extensos. Si yo empezara bash desde el principio, probablemente
+escribiría un parser a mano. Esto ciertamente habría hecho algunas
+cosas más sencillas.
+
+\end{aosasect2}
+
+\end{aosasect1}
+
+%\begin{aosasect1}{Conclusions}
+\begin{aosasect1}{Conclusiones}
+
+Bash es un buen ejemplo de una pieza de software libre grande y compleja. Ha tenido el beneficio de más de veinte años de desarrollo, y es madura y poderosa. Se ejecuta casi en todo lugar, y es usado por millones de personas cada día, muchos de los cuales no lo saben.
+%Bash is a good example of a large, complex piece of free software.  It
+%has had the benefit of more than twenty years of development, and is
+%mature and powerful.  It runs nearly everywhere, and is used by
+%millions of people every day, many of whom don't realize it.
+
+Bash ha sido influenciado por muchas fuentes, empezando por
+el shell de Unix 7th Edition, escrito por  Stephen Bourne. La
+influencia más significativa es el estándar Posix, que
+dicta una porción significativa de su comportamiento. Esta
+combinación de compatibilidad hacia atrás y cumplimiento de
+estándares trajo sus propios retos.
+%Bash has been influenced by many sources, dating back to the original
+%7th Edition Unix shell, written by Stephen Bourne.  The most
+%significant influence is the Posix standard, which dictates a
+%significant portion of its behavior.  This combination of backwards
+%compatibility and standards compliance has brought its own challenges.
+
+Bash se ha beneficiado de ser parte del proyecto GNU, que ha proporcionado
+un movimiento y un marco de trabajo en el que bash existe. Sin GNU,
+no habría bash. Bash también se benefició de su activa y vibrante
+comunidad de usuarios. Su participación ha ayudado a hacer de
+bash lo que es hoy---un prueba de los beneficios del software libre.
+%Bash has profited by being part of the GNU Project, which has provided
+%a movement and a framework in which bash exists.  Without GNU, there
+%would be no bash.  Bash has also benefited from its active, vibrant
+%user community.  Their feedback has helped to make bash what it is
+%today---a testament to the benefits of free software.
 
 \end{aosasect1}
 

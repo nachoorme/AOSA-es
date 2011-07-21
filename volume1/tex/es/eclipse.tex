@@ -1,7 +1,7 @@
 \begin{aosachapter}{Eclipse}{s:eclipse}{Kim Moir}
 
-La implementación de la modularidad en el software es una tarea notoriamente difícil.
-La interoperabilidad una gran cantidad de código fuente escrito por una
+Implementar modularidad en el software es una tarea reconocidamente difícil.
+La interoperabilidad de una gran cantidad de código fuente escrito por una
 comunidad diversa es también difícil de administrar. En Eclipse
 hemos logrado tener éxito en ambos aspectos. En Junio de 2010,
 Eclipse Foundation puso a disposición su lanzamiento coordinado Helios,
@@ -12,7 +12,7 @@ más de 40 empresas trabajando juntos para desarrollar a partir
 de la funcionalidad de la plataforma básica. Cuál fue la
 visión original de la arquitectura para Eclipse? Cómo evolucionó?
 De qué manera la arquitectura de una aplicación sirve para
-promover la cohesión y crecimiento de la comunidad? Retrocedamos
+promover la cohesión y crecimiento de la comunidad? Regresemos
 al principio.
 %Implementing software modularity is a notoriously difficult task.
 %Interoperability with a large code base written by a diverse community
@@ -28,17 +28,17 @@ al principio.
 El 7 de noviembre de 2001, un proyecto de código abierto (open source)
 llamado Eclipse 1.0 fue lanzado. En aquella fecha Eclipse fue
 descrito como ``un entorno de desarrollo integrado (IDE) para
-todo y nada en particular.'' Esta descripción fue genérica adrede,
+todo y nada en particular.'' Esta descripción fue genérica a propósito,
 pues la visión de la arquitectura no era tan sólo un conjunto
 de herramientas, sino un "framework"; un framework que fuese
 modular y escalable. Eclipse proporcionó una plataforma basada
 en componentes que podría servir de base para crear herramientas
 de desarrollo para desarrolladores. Esta arquitectura extensible
-promovió que la comunidad desarrolle a partir de una plataforma núcleo
+fomentó que la comunidad desarrolle a partir de una plataforma núcleo
 y la extienda más allá de los límites de la versión original. Eclipse
 se inició como una plataforma y "Eclipse SDK" fue el producto
-prueba-de-concepto. Eclipse SDK permitió a los desarrolladores
-auto-alojar
+"prueba de concepto". Eclipse SDK permitió a los desarrolladores
+auto-hospedar
 y utilizar al mismo Eclipse SDK para construir nuevas versiones de
 Eclipse.
 
@@ -58,7 +58,7 @@ Eclipse.
 
 La imagen estereotipada de un desarrollador de código abierto es la
 de una persona altruista que trabaja hasta muy tarde en la noche para
-corregir "bugs" e implementar nuevas y fantásticas características
+corregir fallos (bugs) e implementar nuevas y fantásticas características
 para satisfacer sus propios intereses. Por el contrario, si retrocedemos
 a la historia inicial del proyecto Eclipse, algo de el código inicial
 que fue donado se basó en VisualAge for Java, desarrollado por IBM\@. Los
@@ -116,7 +116,7 @@ Al principio la gente conocía a ``Eclipse'' sólo como el SDK pero ahora
 es mucho más. En Julio de 2010 habían 250 proyectos distintos en
 desarrollo en eclipse.org. Hay soporte de herramientas para
 desarrollar con C/C++, PHP, web services, model driven development,
-soporte de construcción de la aplicación, y mucho más. Cada uno de
+herramientas de construcción de aplicaciones, y mucho más. Cada uno de
 esos proyectos está incluido en un proyecto de máximo nivel (top-level
 project, TLP) que es dirigido por un comité de dirección (PMC, project
 management committee) el cual consiste de miembros senior del
@@ -157,7 +157,7 @@ problemas de infraestructura tales como interactuar con el sistema
 de archivos, proporcionar actualizaciones de software, y conectarse
 a repositorios de código fuente. Eclipse es tal vez más famoso
 por sus herramientas de desarrollo Java (Java Development Tools, JDT). La
-intención era que tales herramientas de desarrollo servirían como
+intención era que tales herramientas de desarrollo sirvieran como
 ejemplo para las personas interesadas en proporcionar herramientas
 para otros lenguajes.
 
@@ -267,7 +267,7 @@ dependencias que necesita importar de otros plugins.
 </plugin>
 \end{verbatim}
 
-A fin de incentivar a las personas a desarrollar a partir de la
+Para incentivar a las personas a desarrollar en la
 plataforma Eclipse, se requiere un mecanismo para hacer una
 contribución a la plataforma, y para que la plataforma acepte esta
 contribución. Esto se logra mediante el uso de extensiones
@@ -466,7 +466,7 @@ Uno de los conceptos más importantes acerca de Eclipse es que
 plataforma Eclipse, o que lo escribas tú mismo, los plugins son todos
 componentes de primera clase de la aplicación 
 ensamblada. \aosafigref{fig.ecl.plat} muestra conjuntos de
-funcionalidad relacionada contribuida por plugins en las primeras
+funcionalidad relacionada contribuida mediante plugins en las primeras
 versiones de Eclipse.
 
 %One of the most important concepts about Eclipse is that
@@ -479,13 +479,13 @@ versiones de Eclipse.
 \aosafigure[250pt]{../images/eclipse/platform.eps}{Arquitectura Inicial de Eclipse}{fig.ecl.plat}
 %\aosafigure[250pt]{../images/eclipse/platform.eps}{Early Eclipse Architecture}{fig.ecl.plat}
 
-El workbench es el elemento de interfaz de usuario (UI) más familiar
+El workbench (banco de trabajo) es el elemento de interfaz de usuario (UI) más familiar
 a los usuarios de la plataforma Eclipse, en tanto proporciona las
 estructuras que organizan cómo Eclipse aparece al usuario en el escritorio.
 El workbench consiste de perspectivas, vistas y editores. Los editores
 están asociados con tipos de archivos tal que el editor correcto es
 iniciado cuando un archivo es abierto. Un ejemplo de una vista
-es la vista ``problemas'' que indica errores o alertas en el código
+es la que corresponde a ``problemas'', la cual indica errores o alertas en el código
 Java. Juntos, los editores y vistas forman una perspectiva que presenta
 las herramientas al usuario de un modo organizado.
 
@@ -606,7 +606,7 @@ y SWT fue la elección natural cuando se inició el trabajo con Eclipse. El
 uso de SWT en vez de Swing en Eclipse dividió a la comunidad Java. Algunos
 vieron conspiraciones, pero Eclipse fue un éxito y el uso de SWT
 lo diferenció de otros programas Java. Eclipse tenía buen rendimiento,
-era "pixel perfect" y la sensación general fue, ``no puedo crear
+era "pixel perfect" y la sensación general fue, ``no puedo creer
 que este es un programa Java.''
 
 %Around 1999, OTI was using Java to implement a product called
@@ -624,7 +624,7 @@ que este es un programa Java.''
 %Java programs.  Eclipse was performant, pixel perfect and the general
 %sentiment was, ``I can't believe it's a Java program.''
 
-Los primeros SDK de Eclipse se ejecutaron el Linux y Windows. Para
+Los primeros SDK de Eclipse se ejecutaron en Linux y Windows. Para
 2010, hay soporte para más de una docena de plataformas. Un desarrollador
 puede escribir una aplicación para una plataforma y desplegar en 
 múltiples plataformas. Desarrollar un nuevo toolkit de widgets
@@ -647,7 +647,7 @@ JFace es una capa encima de SWT que proporciona herramientas para
 tareas de programación gráfica comunes, tales como frameworks
 de preferencias y "wizards". Al igual que SWT, fue diseñado para
 trabajar con cualquier sistema de ventanas. Sin embargo, es código
-Java puro y no contiene ningún código nativo a plataforma.
+Java puro y no contiene ningún código nativo de la plataforma.
 
 %JFace is a layer on top of SWT that provides tools for common UI
 %programming tasks, such as frameworks for preferences and
@@ -660,7 +660,7 @@ en pequeñas unidades de información denominadas tópicos. Un tópico
 consiste de una etiqueta y una referencia a su localización. La
 localización puede ser un archivo de documentación HTML, o un
 documento XML describiendo enlaces adicionales. Los tópicos son
-agrupados juntos en tablas de contenidos (TOCs.) Considérese los
+agrupados juntos en tablas de contenidos (TOCs, table of contents.) Considérese los
 tópicos como las hojas, y las TOCs como las ramas de organización.
 Para agregar contenido de ayuda a la aplicación, se puede
 contribuir al punto de extensión \code{org.eclipse.help.toc} tal
@@ -809,12 +809,13 @@ proporcionada por un tercero.
 %application provided by a third party.
 
 Escribir su propio compilador proporcionó un mecanismo para proveer
-soporte a un constructor incremental dentro del IDE\@. Un constructor
+soporte de construcción incremental del software dentro del IDE\@. La construcción
 incremental proporciona mejor rendimiento pues sólo recompila archivos
-que han cambiado o sus dependencias. Cómo trabaja el constructor
+que han cambiado o sus dependencias. Cómo funciona la construcción
 incremental? Cuando se crea un proyecto Java dentro de Eclipse,
 se están creando recursos en el workspace para almacenar los archivos.
-Un constructor dentro de Eclipse toma archivos de entrada
+Un constructor (builder - no confundir con los constructores de los objetos)
+dentro de Eclipse toma archivos de entrada
 dentro del workspace (archivos \code{.java}), y crea
 una salida (archivos \code{.class}.) Mediante el estado de construcción,
 el constructor sabe acerca de los tipos (clases o interfaces) en el
@@ -940,7 +941,7 @@ soporte a plugins dinámicos. Las soluciones consideradas incluyeron
 JMX, Jakarta Avalon y OSGi. JMX no era un modelo de componentes
 totalmente desarrollado por lo que no se consideró apropiado. Jakarta
 Avalon no fue elegido pues parecía estar perdiendo impulso como
-proyecto. Adicionalmente a los requerimientos técnico, también era
+proyecto. Adicionalmente a los requerimientos técnicos, también era
 importante considerar la comunidad que soportaba esas tecnologías.
 Estarían dispuestos a incorporar cambios específicos de Eclipse?
 Estaba siendo activamente desarrollada y ganando nuevos adeptos?
@@ -1051,7 +1052,7 @@ y puntos de extensión continuaron siendo descritos en \code{plugin.xml}
 puesto que son conceptos de Eclipse. El resto de información se
 describe en el \code{META-INF/MANIFEST.MF}, que es la versión
 OSGi del manifiesto del bundle. Para soportar este cambio, el PDE
-proporcionó un nuevo editor de manifiesto dentro de Eclipse. Cada
+proporcionó un nuevo editor de manifiestos dentro de Eclipse. Cada
 bundle tiene un nombre y versión. El manifiesto del
 bundle \code{  org.eclipse.ui} es así:
 
@@ -1091,12 +1092,12 @@ Bundle-RequiredExecutionEnvironment: CDC-1.0/Foundation-1.0, J2SE-1.3
 Para Eclipse 3.1, el manifiesto también puede especificar un
 entorno de ejecución requerido por el bundle (bundle required
 execution environment, BREE.) Los entornos de ejecución especifican
-el mínimo entorno Java requerido por el bundle para ejecutarse. El
-compilador Java no entiende bundles ni manifiestos OSGi. El PDE
+el mínimo entorno Java requerido por el bundle para ejecutarse: el
+compilador Java no entiende de bundles ni manifiestos OSGi. El PDE
 proporciona herramientas para desarrollar bundles OSGi. Así,
 el PDE interpreta el manifiesto del bundle y genera el "classpath"
 para ese bundle. Si se especificara un entorno de ejecución
-J2SE-1.4 en el manifiesto, y entonces se escribe algún código que 
+J2SE-1.4 en el manifiesto, y a continuación se escribe algún código que 
 incluye "generics", se obtendría una alerta de errores de compilación
 en el código. Esto asegura que el código se adhiere al contrato
 especificado en el manifiesto.
@@ -1114,9 +1115,9 @@ especificado en el manifiesto.
 
 OSGi proporciona un framework modular para Java. El framework OSGi maneja conjuntos
 de bundles auto-descritos y administra su proceso de carga de clases (classloading.) Cada
-bundle tiene su propio classloader. La ruta de clases (classpath) disponible a un bundle
+bundle tiene su propio classloader. La ruta de las clases (classpath) disponible a un bundle
 se construye examinando las dependencias en el manifiesto y generando un classpath
-disponible para el bundle. Las aplicaciones OSGi son conjuntos de bundles. Para
+disponible para cada bundle. Las aplicaciones OSGi son conjuntos de bundles. Para
 hacer uso total de la modularidad, es necesario expresar las dependencias en un
 formato robusto para los consumidores. Así el manifiesto describe paquetes exportados
 que están disponibles para clientes de este bundle, correspondiendo al API
@@ -1145,16 +1146,16 @@ una versión de al menos 3.2.0, y ser menor  que 4.0.0.
 %\code{org.eclipse.ui} depends on must be at least 3.2.0 and less than
 %4.0.0.
 
-\aosafigure[200pt]{../images/eclipse/bundlelifecycle.eps}{Ciclo de Vida de Bundle OSGi}{fig.ecl.blc}
+\aosafigure[200pt]{../images/eclipse/bundlelifecycle.eps}{El Ciclo de Vida de los Bundles OSGi}{fig.ecl.blc}
 
-OSGi es un framework dinámico que soporta la instalación, inicialización, detención y detención de bundles.
-Como se mencionó antes, la activación diferida (lazy activation) fue una ventaja central a Eclipse pues las
-clases de plugins no se cargaban hasta que se necesiten. El ciclo de vida del bundle OSGi también permite
+OSGi es un framework dinámico que soporta la instalación, inicialización, detención y desinstalación de bundles.
+Como se mencionó antes, la activación diferida (lazy activation) fue una ventaja central en Eclipse pues las
+clases de plugins no se cargaban hasta que se necesitaban. El ciclo de vida del bundle OSGi también permite
 esta estrategia. Cuando se inicia una aplicación OSGi, los bundles están en estado instalado (installed.) Si sus dependencias
 son satisfechas, el bundle cambia a estado resuelto (resolved.) Una vez resuelto, las clases dentro del bundle pueden
-ser cargadas y ejecutadas. El estado ``iniciando'' (starting) significa que el bundle está siendo activado de acuerdo
-con su política de activación. Una vez activado, el bundle está en estado activo (active); éste puede adquirir recursos
-requeridos e interactuar con otros bundles. Un bundle está en estado ``deteniéndose'' (stopping) cuando está
+ser cargadas y ejecutadas. El estado ``starting'' (iniciando) significa que el bundle está siendo activado de acuerdo
+con su política de activación. Una vez activado, el bundle está en estado activo (active); éste puede adquirir sus recursos
+requeridos e interactuar con otros bundles. Un bundle está en estado ``stopping'' (deteniéndose) cuando está
 ejecutando su método activador stop para liberar cualquier recurso que hubiera abierto cuando estaba activo. Finalmente
 un bundle puede ser desinstalado, lo que significa que no está disponible para utilizarse.
 %OSGi is a dynamic framework which supports the installation, starting,
@@ -1208,8 +1209,8 @@ calificador se incrementa para indicar un id de construcción del sistema de cont
 %incremented. Finally, the fourth or qualifier segment is incremented
 %to indicate a build id source control repository tag.
 
-Adicionalmente a expresar las dependencias fijas entre bundles, también hay un mecanismo dentro de OSGi
-llamado servicios que proporciona mayor desacoplamiento entre bundles. Los servicios son objetos con un
+Adicionalmente al expresar las dependencias prefijadas entre bundles, también hay un mecanismo dentro de OSGi
+llamado services (servicios) que proporciona mayor desacoplamiento entre bundles. Los servicios son objetos con un
 conjunto de propiedades que son registradas con el registro de servicios OSGi. A diferencia de las
 extensiones, que son registradas en el registro de extensiones cuando Eclipse procesa los bundles durante
 el arranque, los servicios son registrados dinámicamente. Un bundle que está consumiendo un servicio
@@ -1287,8 +1288,8 @@ comunidad para construir aplicaciones RCP.
 %the IDE, so several bundles were split into smaller ones that could be
 %consumed by the community for building RCP applications.  
 
-Como ejemplos de aplicaciones RCP podemos mencionar su uso para
-monitorear los robots Mars Rover desarrollado por NASA en el
+Como ejemplos de uso aplicaciones RCP podemos mencionar el
+monitoreo de los robots Mars Rover desarrollado por NASA en el
 Jet Propulsion Laboratory; Bioclipse para visualización de datos
 bioinformáticos, y Dutch Railway para el monitoreo de la performance
 de los trenes. Lo común a muchas de estas aplicaciones fue que
@@ -1315,8 +1316,8 @@ tecnológica tendría soporte por largo tiempo.
 Viendo la arquitectura 3.0 en \aosafigref{fig.ecl.rcp}, se podrá notar que el Runtime Eclipse
 todavía existe y proporciona el modelo de aplicación y el registro de extensiones. El modelo
 de plugin es ahora administrado por OSGi, y administra las dependencias entre componentes. Adicionalmente
-a continuar extendiendo Eclipse a sus propios IDEs, los consumidores puede construir
-a partir del framework de aplicaciones RCP para plataformas más genéricas.
+a continuar extendiendo Eclipse a sus propios IDEs, los consumidores pueden
+partir del framework de aplicaciones RCP para aplicaciones más genéricas.
 
 %Looking at the 3.0 architecture in \aosafigref{fig.ecl.rcp}, you will
 %note that the Eclipse Runtime still exists to provide the application
@@ -1374,7 +1375,7 @@ sencillas de los bundles. Un feature, al igual que un bundle, tiene un nombre y
 una versión.  Los features pueden incluir otros features, y especificar
 rangos de versiones para los features que incluyen. Los bundles que son
 incluidos en un feature son listados, junto con propiedades específicas. Por ejemplo,
-Ud. puede ver que el fragmento \code{org.eclipse.launcher.gtk.linux.x86\_64} especifica
+se puede ver que el fragmento \code{org.eclipse.launcher.gtk.linux.x86\_64} especifica
 el sistema operativo (\code{os}), sistema de ventanas (\code{ws}) y la
 arquitectura (\code{arch}) en el que debería ser utilizado. Así, actualizando
 a una nueva versión este fragmento sólo podría ser instalado en esta plataforma. Esos
@@ -1490,7 +1491,7 @@ Update Manager todavía estaba disponible para su uso, pero p2 estaba habilitado 
 %backward compatibility, Update Manager was still available for use,
 %but p2 was enabled by default.
 
-\begin{aosasect2}{p2 Concepts}
+\begin{aosasect2}{Conceptos de p2}
 %\begin{aosasect2}{p2 Concepts}
 
 Hablar de Equinox p2 es hablar de las unidades de instalación (installation units, IU.) Una IU
@@ -1518,12 +1519,12 @@ tanto de repositorios de metadata y de artefactos.
 %artifacts that they describe. A p2 repository consists of both
 %metadata and artifact repositories.
 
-\aosafigure{../images/eclipse/p2.eps}{Conceptos en P2}{fig.ecl.p2}
+\aosafigure{../images/eclipse/p2.eps}{Conceptos de P2}{fig.ecl.p2}
 %\aosafigure{../images/eclipse/p2.eps}{P2 Concepts}{fig.ecl.p2}
 
-Un perfil es una lista de IUs en una instalación. Por ejemplo, su
-SDK Eclipse tiene un perfil que describe su instalación actual. Desde
-el mismo Eclipse, Ud. puede solicitar una actualización a una nueva
+Un perfil es una lista de IUs en una instalación. Por ejemplo, el
+SDK Eclipse tiene un perfil que describe la instalación actual. Desde
+el mismo Eclipse, se puede solicitar una actualización a una nueva
 versión del software construido, lo que creará un nuevo perfil con
 un conjunto diferente de IUs. Un perfil también proporciona una lista de
 propiedades asociadas con la instalación, tal como el sistema operativo,
@@ -1599,7 +1600,7 @@ los bundles sobre la base del mejor esfuerzo. Esto también significa
 que cualquier conflicto en la instalación es resuelto en tiempo de
 ejecución, no en la fase de instalación. Los requerimientos y dependencias
 deberían ser resueltos en la fase de instalación, no de ejecución. Sin
-embargo, los usuarios fueron con frecuencia pasaron por alto estos asuntos
+embargo, los usuarios con frecuencia pasaron por alto estos asuntos
 y asumieron que al existir los bundles en el disco, debían estar funcionando.
 Anteriormente, los sitios de actualización que proporcionaba Eclipse eran
 un directorio simple consistiendo de bundles en JARs y features. Un
@@ -1607,7 +1608,7 @@ simple archivo \code{site.xml} proporcionaba los nombres de los
 features que se podían consumir desde el sitio. Con el advenimiento
 de p2, la metadata proporcionada en los repositorios p2 se tornó mucho
 más compleja. Para crear metadata, el proceso de construcción necesitó
-ser alterado para generar metadata ya sea al construir o ejecutar
+ser alterado para generarla ya sea durante la construcción misma o ejecutar
 una tarea de generación sobre los bundles existentes. Inicialmente
 faltaba documentación describiendo cómo hacer esos cambios. Como siempre,
 el exponer nueva tecnología a una audiencia mayor, mostró errores
@@ -1654,7 +1655,7 @@ es apropiada. Es capaz de incorporar nueva tecnología? promueve el
 crecimiento de la comunidad? es fácil atraer nuevas contribuciones?
 Al final de 2007, los confirmadores del proyecto Eclipse decidieron
 que las respuestas a estas interrogantes eran NO, y se embarcaron
-el el diseño de una nueva versión de Eclipse. Al mismo tiempo,
+en el diseño de una nueva versión de Eclipse. Al mismo tiempo,
 ellos fueron conscientes de que habían miles de aplicaciones Eclipse
 que dependían del API\@ existente. Se creó un proyecto tecnológico
 de incubación a fines de 2008 con tres metas específicas: simplificar
@@ -1730,8 +1731,8 @@ ejemplo de un modelo generado para una aplicación de ejemplo 4.x.
 
 \begin{aosasect2}{Estilos: Cascading Style Sheets}
 
-Eclipse fue lanzado el 2001, antes de la era de aplicaciones
-Internet de apariencia enriquecida que pudiera ser maquillada
+Eclipse fue lanzado el 2001, antes que la era de aplicaciones
+Internet de apariencia enriquecida pudiera ser disfrazada
 vía CSS para proporcionar una vista distinta. Eclipse 4.0 proporciona
 la habilidad de utilizar estilos (stylesheets) para cambiar fácilmente
 la apariencia de la aplicación Eclipse. Los estilos por omisión
@@ -1882,11 +1883,11 @@ conocida como ``the twenty things'' (las veinte cosas) y
 se conocen como los Eclipse Application services (Servicios de 
 Aplicación.) El objetivo
 es ofrecer APIs independientes que los clientes pueden utilizar
-sin tener que tener un conocimiento profundo de todas las APIs
+sin necesitar un conocimiento profundo de todas las APIs
 disponibles. Son estructuradas como servicios individuales
-tal que pueden ser utilizadas también en otros lenguajes además
+por lo que pueden ser utilizadas también en otros lenguajes además
 de Java, tales como Javascript. Por ejemplo, hay un API
-para acceder el modelo de aplicación, para leer y modificar preferencias
+para acceder al modelo de aplicación, para leer y modificar preferencias
 y reportar errores y alertas.
 
 %One of the main goals in Eclipse 4.0 was to simplify the API for
@@ -1920,11 +1921,11 @@ continuar entregando productos basados en un API estable.
 %products based on a stable API.
 
 Eclipse tiene muchos consumidores con diversos casos de uso por lo que
-nuestro expansivo API resulta difícil de adoptar y entender para
+nuestra expasiva API resulta difícil de adoptar y entender para
 nuevos consumidores. En retrospectiva, debimos mantener nuestro API
 más simple. Si 80\% de los consumidores sólo usan el 20\% del API,
 entonces hay una necesidad de simplificación lo que fue una de
-las razones por la que se creó el canal Eclipse 4.x.
+las razones por la que se creó la corriente Eclipse 4.x.
 
 %Eclipse has so many consumers with diverse use cases and our expansive
 %API became difficult for new consumers to adopt and understand. In
@@ -1947,7 +1948,7 @@ implementación.
 
 En los días iniciales del proyecto Eclipse, los confirmadores se dieron el
 lujo de dedicar un tiempo significativo a la documentación, ejemplos
-y responde preguntas de la comunidad. A través del tiempo esta
+y responder preguntas de la comunidad. A través del tiempo esta
 responsabilidad se desplazó a la comunidad Eclipse como un todo. Podría
 haber sido mejor proporcionar documentación y casos de uso para
 ayudar a la comunidad, pero esto ha sido difícil dada la gran
@@ -1970,8 +1971,8 @@ confiar en que podrán hacer lo mismo.
 
 Mediante la adopción de nueva tecnología, y reinventando cómo luce y
 opera Eclipse, nosotros mantenemos la comunicación con nuestros
-consumidores, manteniéndolos unidos en la comunidad. Si estás interesado(a)
-en participar de Eclipse, por favor visita http://www.eclipse.org.
+consumidores, manteniéndolos unidos en la comunidad. Si usted está interesado(a)
+en participar de Eclipse, por favor visite http://www.eclipse.org.
 
 %By adopting new technology, and reinventing how Eclipse looks and
 %works, we continue the conversation with our consumers and keep
