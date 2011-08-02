@@ -20,3 +20,6 @@ disk seek rate                              tasa de búsqueda de disco
 paper                                       publicación
 self-contained                              
 software                                    software (de acuerdo a la RAE)
+package										paquete
+module										modulo
+bundle										bundle (por mantener sentido léxico se conserva el término ingles)
