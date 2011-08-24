@@ -1,0 +1,11 @@
+#Ignore build outpu files
+*.log
+*.aux
+*.toc
+*.dvi
+*.new
+*.pdf
+*.bak
+
+#Ignore temp files
+*~
