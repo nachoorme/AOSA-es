@@ -15,7 +15,7 @@ graphite.tex
 hdfs.tex                                                        
 integration.tex
 intro.tex                                                       
-jitsi.tex           Jesus Sayar Celestino                      40
+jitsi.tex           Jesus Sayar Celestino                     100 
 llvm.tex
 makingsoftware.tex  Diego Bravo                               100
 mercurial.tex       Sebastian Kreft                            58
