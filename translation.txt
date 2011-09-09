@@ -6,8 +6,8 @@ aosa.tex            Sebastian Kreft                           100
 asterisk.tex        Emilio Osorio                               ?
 audacity.tex
 bash.tex            Diego Bravo                               100
-bdb.tex             Diego Bravo                                 ?
-cmake.tex           Diego Bravo                                 ?
+bdb.tex             
+cmake.tex           
 colophon.tex        Sebastian Kreft                           100
 eclipse.tex         Diego Bravo                               100
 frontmatter.tex     Sebastian Kreft                           100
